@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.marouane.glassesspeech.test">
+  <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="36"/>
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <queries><intent><action android:name="android.speech.RecognitionService"/></intent></queries>
+  <application android:label="Glasses Speech Test" android:allowBackup="false" android:debuggable="false"/>
+  <instrumentation android:name="org.marouane.glassesspeech.test.RecognitionProbe" android:targetPackage="org.marouane.glassesspeech" android:functionalTest="true"/>
+</manifest>

@@ -1,0 +1,47 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools platforms;android-37.0 platforms;android-36 build-tools;36.0.0
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Test and compile Django
+        run: ./gradlew :app:testDebugUnitTest :core:assistant:testDebugUnitTest :core:media:testDebugUnitTest :app:assembleDebug :app:assembleRelease
+      - name: Test the speech companion
+        run: |
+          mkdir -p speech-adapter/build/unit-tests
+          javac -d speech-adapter/build/unit-tests speech-adapter/src/org/marouane/glassesspeech/{PcmUtterances,TranscriptionPolicy}.java speech-adapter/tests/{PcmUtterancesTest,TranscriptionPolicyTest}.java
+          java -cp speech-adapter/build/unit-tests org.marouane.glassesspeech.PcmUtterancesTest
+          java -cp speech-adapter/build/unit-tests org.marouane.glassesspeech.TranscriptionPolicyTest
+      - name: Compile the speech companion
+        run: |
+          if ! command -v zsh >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y zsh
+          fi
+          zsh speech-adapter/build.sh

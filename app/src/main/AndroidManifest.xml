@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- INTERNET: the Meta login during setup, the glasses' socket on Wi-Fi Direct, and the model, which may be a
+         plain-HTTP server on the local network (hence cleartext allowed). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- Joining the glasses' own network for the live view. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
+    <!-- Wi-Fi Direct before Android 13, and the place of each capture. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Scans only find the glasses for setup, never a place. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- The companion device's presence wakes Visor from the background, as the Meta app's does. -->
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The live view's notification as a Live Update on Android 16. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- The glasses' Messages app and "send a text" read and send the phone's SMS. -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <!-- The assistant reads the day's events when the wearer asks. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- The glasses' microphone for the assistant and the custom wake word; the phone's while the Meta AI mic is held. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+    <uses-feature android:name="android.software.companion_device_setup" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- Speech recognisers and voices, and the SMS, media, map and music apps the glasses use. -->
+    <queries>
+        <intent><action android:name="android.provider.Telephony.SMS_DELIVER" /></intent>
+        <package android:name="com.openai.chatgpt" />
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <!-- VDK apps that a voice phrase starts. -->
+        <intent>
+            <action android:name="com.macedonga.visor.kit.action.VOICE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MEDIA_BUTTON" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <!-- The apps whose notifications can be muted for the glasses. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".VisorApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Visor"
+        android:usesCleartextTraffic="true">
+
+        <!-- User-enabled, package-scoped controls for the native ChatGPT dot call. -->
+        <service
+            android:name=".dots.DotCallAccessibilityService"
+            android:label="@string/dot_call_controls"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/dot_call_accessibility" />
+        </service>
+        <receiver android:name=".dots.DotCallReceiver" android:exported="false" />
+        <activity
+            android:name=".dots.DotCallLaunchActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection|density|fontScale|keyboard|keyboardHidden|navigation"
+            android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- A long press on the Quick Settings tile opens the app. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!-- An MCP server's OAuth sign-in comes back here from the browser. -->
+        <activity
+            android:name=".OAuthRedirectActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.macedonga.visor" />
+            </intent-filter>
+        </activity>
+
+        <!-- Other apps, automations and the launcher's shortcuts work the glasses through these two; developer mode turns them on. -->
+        <activity
+            android:name=".outside.DeveloperActivity"
+            android:enabled="false"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.macedonga.visor.action.TAKE_PHOTO" />
+                <action android:name="com.macedonga.visor.action.START_VIDEO" />
+                <action android:name="com.macedonga.visor.action.STOP_VIDEO" />
+                <action android:name="com.macedonga.visor.action.TOGGLE_VIDEO" />
+                <action android:name="com.macedonga.visor.action.IMPORT_MEDIA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".outside.DeveloperReceiver"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.macedonga.visor.action.TAKE_PHOTO" />
+                <action android:name="com.macedonga.visor.action.START_VIDEO" />
+                <action android:name="com.macedonga.visor.action.STOP_VIDEO" />
+                <action android:name="com.macedonga.visor.action.TOGGLE_VIDEO" />
+                <action android:name="com.macedonga.visor.action.IMPORT_MEDIA" />
+            </intent-filter>
+        </receiver>
+
+        <!-- The VDK, the Visor Development Kit: apps bind this, and get what the person grants them. -->
+        <service
+            android:name=".outside.KitService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.macedonga.visor.kit.action.BIND" />
+            </intent-filter>
+        </service>
+
+        <!-- The VDK's consent screen, over the app that asks. -->
+        <activity
+            android:name=".dat.ToolkitActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".outside.KitConsentActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.macedonga.visor.kit.action.REQUEST_SCOPES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- The Live view's frames for an app holding developer mode's token. -->
+        <service
+            android:name=".outside.FrameService"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.macedonga.visor.action.LIVE_FRAMES" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
+
+        <service
+            android:name=".connection.GlassesService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- An update kills the service; this starts the connection again, as the presence does. -->
+        <receiver
+            android:name=".connection.AfterUpdate"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Bound by the system when the associated glasses appear, and starts the connection from the background. -->
+        <service
+            android:name=".connection.GlassesPresence"
+            android:exported="false"
+            android:permission="android.permission.BIND_COMPANION_DEVICE_SERVICE">
+            <intent-filter>
+                <action android:name="android.companion.CompanionDeviceService" />
+            </intent-filter>
+        </service>
+
+        <!-- Mirrors the phone's notifications to the glasses, and tells them which app is playing. -->
+        <service
+            android:name=".notify.MirrorListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".outside.GlassesWidget"
+            android:exported="false"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_glasses_info" />
+        </receiver>
+
+        <service
+            android:name=".outside.GlassesTile"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_visor"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>

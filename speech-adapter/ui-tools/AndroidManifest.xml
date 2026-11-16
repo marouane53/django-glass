@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.marouane.glassesspeech.ui">
+  <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="36"/>
+  <queries>
+    <package android:name="org.marouane.djangoglasses" />
+    <intent><action android:name="android.provider.Telephony.SMS_DELIVER" /></intent>
+  </queries>
+  <application android:label="Glasses setup tools" android:allowBackup="false" android:debuggable="false"/>
+  <instrumentation android:name="org.marouane.glassesspeech.ui.UiAction" android:targetPackage="org.marouane.glassesspeech.ui" android:functionalTest="true"/>
+  <instrumentation android:name="org.marouane.glassesspeech.ui.NotificationTargetChecks" android:targetPackage="org.marouane.djangoglasses" android:functionalTest="true"/>
+</manifest>

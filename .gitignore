@@ -1,0 +1,75 @@
+# Gradle and Android build output
+.gradle/
+build/
+.kotlin/
+local.properties
+.cxx/
+.externalNativeBuild/
+captures/
+*.iml
+
+# Signing material, never commit
+*.jks
+*.keystore
+!debug.keystore
+keystore.properties
+
+# Credentials. The owner key is imported at runtime and stays on the device.
+secrets/
+*.pem
+
+# IDE
+.idea/
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent setup: the skills from `npx skills add`, their links and lock file, and local instructions.
+.agents/
+.claude/
+skills-lock.json
+
+# Subagent-driven development scratch: ledgers, briefs, review packages.
+# Git-ignored by design. The record that matters is the commit history.
+.superpowers/
+
+# Python bytecode, and the Playwright MCP plugin's scratch directory.
+__pycache__/
+.playwright-mcp/
+
+# Local helper scripts.
+tools/
+
+# Local only: the desktop client snapshot and the agent memory. The repo is going public.
+reference/
+memory/
+
+# Editor build output (the Kotlin and Java extensions compile into bin/)
+bin/
+
+# Local accounts, device captures, diagnostics and generated packages
+.codex/
+.codex-attachments/
+.env
+.env.*
+!.env.example
+*.apk
+*.aab
+*.apks
+*.apkm
+*.p12
+*.pfx
+*.key
+*.log
+*.pcap
+*.pcm
+*.wav
+*.mp3
+*.mp4
+*.zip
+dist/
+private/
+diagnostics/
+test-assets/

@@ -1,0 +1,114 @@
+package org.marouane.glassesspeech;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
+import android.speech.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+/** Receives PCM supplied by a client, never opens the phone's microphone. */
+public class MaiRecognitionService extends RecognitionService {
+    private volatile Session active;
+    private SpeechRecognizer fallback;
+    public void onCheckRecognitionSupport(Intent intent, SupportCallback callback) {
+        callback.onSupportResult(new RecognitionSupport.Builder().setOnlineLanguages(Arrays.asList("ar-SA", "ar-MA", "en-US", "fr-FR")).build());
+    }
+    protected synchronized void onStartListening(Intent intent, Callback callback) {
+        if (active != null) { fail(callback, SpeechRecognizer.ERROR_RECOGNIZER_BUSY); return; }
+        // Attribute the client-provided audio session correctly. This service does not open a microphone.
+        android.content.Context attributed = createContext(new android.content.ContextParams.Builder()
+            .setNextAttributionSource(callback.getCallingAttributionSource()).build());
+        ParcelFileDescriptor source = intent.getParcelableExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE, ParcelFileDescriptor.class);
+        if (source == null) { delegatePhoneRecognition(intent, callback); return; }
+        if (intent.getIntExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_SAMPLING_RATE, 16000) != 16000 || intent.getIntExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_CHANNEL_COUNT, 1) != 1
+            || intent.getIntExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_ENCODING, 2) != 2) { fail(callback, SpeechRecognizer.ERROR_AUDIO); return; }
+        String credential = "gemini".equals(Cloud.transcriptionProvider(this)) ? "gemini" : "mai";
+        if (Vault.get(this, credential).isEmpty()) { fail(callback, SpeechRecognizer.ERROR_SERVER); return; }
+        Session session = new Session(source, callback, intent.hasExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION), attributed); active = session;
+        Cloud.status(this, "recognition", true);
+        new Thread(session::readAudio, "mai-audio-pipe").start();
+    }
+    protected void onStopListening(Callback callback) { Session s = active; if (s != null) s.finishInput(); if (fallback != null) fallback.stopListening(); }
+    protected void onCancel(Callback callback) { Session s = active; if (s != null) s.cancel(); active = null; if (fallback != null) { fallback.cancel(); fallback.destroy(); fallback = null; } }
+    public void onDestroy() { Session s = active; if (s != null) s.cancel(); if (fallback != null) fallback.destroy(); super.onDestroy(); }
+    // Preserve normal microphone recognition for apps other than clients supplying glasses audio.
+    private void delegatePhoneRecognition(Intent intent, Callback cb) {
+        if (fallback != null) fallback.destroy();
+        fallback = SpeechRecognizer.createSpeechRecognizer(this, android.content.ComponentName.unflattenFromString("com.google.android.tts/com.google.android.apps.speech.tts.googletts.service.GoogleTTSRecognitionService"));
+        fallback.setRecognitionListener(new RecognitionListener() {
+            private void forward(Throwing task) { try { task.run(); } catch (Exception ignored) {} }
+            public void onReadyForSpeech(Bundle b) { forward(() -> cb.readyForSpeech(b)); }
+            public void onBeginningOfSpeech() { forward(() -> cb.beginningOfSpeech()); }
+            public void onRmsChanged(float rms) { forward(() -> cb.rmsChanged(rms)); }
+            public void onBufferReceived(byte[] b) { forward(() -> cb.bufferReceived(b)); }
+            public void onEndOfSpeech() { forward(() -> cb.endOfSpeech()); }
+            public void onError(int error) { forward(() -> cb.error(error)); }
+            public void onResults(Bundle b) { forward(() -> cb.results(b)); }
+            public void onPartialResults(Bundle b) { forward(() -> cb.partialResults(b)); }
+            public void onEvent(int type, Bundle b) {}
+            public void onSegmentResults(Bundle b) { forward(() -> cb.segmentResults(b)); }
+            public void onEndOfSegmentedSession() { forward(() -> cb.endOfSegmentedSession()); }
+        });
+        fallback.startListening(intent);
+    }
+    private interface Throwing { void run() throws Exception; }
+    private void fail(Callback callback, int error) { try { callback.error(error); } catch (Exception ignored) {} }
+    private final class Session {
+        final ParcelFileDescriptor fd; final Callback cb; final boolean segmented;
+        final android.content.Context attributed;
+        final ExecutorService work = Executors.newSingleThreadExecutor();
+        volatile boolean cancelled, failed; InputStream input;
+        Session(ParcelFileDescriptor source, Callback callback, boolean segments, android.content.Context context) { fd = source; cb = callback; segmented = segments; attributed = context; }
+        void finishInput() { try { fd.close(); } catch (IOException ignored) {} }
+        void cancel() { cancelled = true; finishInput(); }
+        void readAudio() {
+            PcmUtterances utterances = new PcmUtterances();
+            try (InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
+                input = in; cb.readyForSpeech(new Bundle());
+                byte[] frame = new byte[640]; int n;
+                while (!cancelled && (n = in.readNBytes(frame, 0, frame.length)) > 0) {
+                    // Fixed complete frames preserve sample alignment even if pipe reads arrive in odd sizes.
+                    boolean wasActive = utterances.active();
+                    byte[] completed = utterances.accept(frame, n);
+                    if (!wasActive && utterances.active()) cb.beginningOfSpeech();
+                    if (completed != null) submit(completed);
+                }
+            } catch (Exception e) { /* A client closing the pipe ends its current utterance. */ }
+            byte[] tail = utterances.finish();
+            if (!cancelled && tail != null) submit(tail);
+            if (!work.isShutdown()) {
+                work.execute(() -> { if (!cancelled && !failed) try { if (segmented) cb.endOfSegmentedSession(); else if (!sentResult) fail(cb, SpeechRecognizer.ERROR_NO_MATCH); } catch (Exception ignored) {} synchronized (MaiRecognitionService.this) { if (active == this) active = null; } });
+                work.shutdown();
+            }
+        }
+        volatile boolean sentResult;
+        void submit(byte[] pcm) {
+            work.execute(() -> {
+                if (cancelled || failed) return;
+                String text;
+                try {
+                    text = Cloud.transcribe(attributed, pcm);
+                    Cloud.status(MaiRecognitionService.this, "stt", true);
+                } catch (Exception e) {
+                    if (!cancelled) {
+                        Cloud.status(MaiRecognitionService.this, "stt", false);
+                        Cloud.recognitionFailure(MaiRecognitionService.this, "provider", e);
+                        // One failed segment must not kill every later question in the conversation.
+                        if (!segmented) { failed = true; fail(cb, SpeechRecognizer.ERROR_NETWORK); }
+                    }
+                    return;
+                }
+                if (cancelled || text.isEmpty()) return;
+                try {
+                    Bundle result = new Bundle(); result.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, new ArrayList<>(List.of(text)));
+                    if (segmented) cb.segmentResults(result); else cb.results(result); sentResult = true;
+                } catch (Exception e) {
+                    Cloud.recognitionFailure(MaiRecognitionService.this, "callback", e);
+                    cancel();
+                }
+            });
+        }
+    }
+}
