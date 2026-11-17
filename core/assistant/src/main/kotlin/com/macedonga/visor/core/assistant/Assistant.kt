@@ -313,6 +313,7 @@ class Assistant(
     private class PartnerSession(val id: String, val initialInteraction: String) {
         val wake = CompletableDeferred<Boolean>()
         val recordingRelease = RecordingRelease()
+        val scene = SceneMemory()
         @Volatile var microphoneEnded = false
         @Volatile var interaction = initialInteraction
         @Volatile var activityAt = System.currentTimeMillis()
@@ -412,6 +413,7 @@ class Assistant(
         fun ended(s: PartnerSession) = s.id in closed
         fun verified(s: PartnerSession) = s.wake.isCompleted && !ended(s)
         fun end(s: PartnerSession) {
+            s.scene.clear()
             tapButtons.end(s.id)
             closed.add(s.id)
             s.microphoneEnded = true
@@ -1514,24 +1516,50 @@ class Assistant(
         val live = if (store.config.value.vision) runCatching { liveFrame() }.getOrNull()?.let { toModelJpeg(it) } else null
         if (live != null) say("Answering with the Live view's picture")
         val partner = interaction in l.partnerTurns
-        val visualQuestion = live != null || (store.config.value.vision &&
-            (visual.glassesCaptured || visual.glassesWantImage || (!partner && soundsVisual(transcript))))
-        val image = live ?: if (visualQuestion) photo(l, interaction, visual) else null
+        val look = lookPrompt(transcript) != null
+        val scene = l.partnerSession(interaction)?.scene
+        val saved = scene?.current()
+        val use = photoUse(store.config.value.vision, look, saved != null,
+            visual.glassesCaptured || visual.glassesWantImage || (!partner && soundsVisual(transcript)))
+        val visualQuestion = live != null || use == PhotoUse.CAPTURE
+        if (look) android.util.Log.i("DjangoVision", "Explicit look request; cameraEnabled=${store.config.value.vision}")
+        val image = live ?: when (use) {
+            PhotoUse.CAPTURE -> {
+                // If a requested new view fails, do not answer as though the previous scene were current.
+                scene?.clear()
+                photo(l, interaction, visual).also { captured ->
+                    if (captured != null && (!partner || l.partnerCanAnswer(interaction))) {
+                        val kept = scene?.remember(captured)
+                        android.util.Log.i("DjangoVision", "Stored reference photo; frame=${kept?.frame ?: 0}")
+                    }
+                }
+            }
+            PhotoUse.REUSE -> checkNotNull(saved).jpeg.also {
+                android.util.Log.i("DjangoVision", "Reusing reference photo; frame=${saved.frame}; captureAllowed=false")
+            }
+            PhotoUse.NONE -> null
+        }
+        if (look) android.util.Log.i("DjangoVision", "Photo ready=${image != null}; bytes=${image?.size ?: 0}")
         if (image != null) keepPhoto(turn, image)
         fun checkCameraTurn(needsCamera: Boolean = true) {
             check(!needsCamera || store.config.value.vision) { "camera use is disabled" }
             check(link === l && l.partnerCanAnswer(interaction)) { "the glasses closed this question" }
         }
-        val capturePhoto: (suspend () -> ByteArray?)? = if (partner && store.config.value.vision && !visualQuestion) {
+        val capturePhoto: (suspend () -> ByteArray?)? = if (partner && store.config.value.vision && !visualQuestion && use != PhotoUse.REUSE) {
             {
                 checkCameraTurn()
+                android.util.Log.i("DjangoVision", "Model requested first scene photo")
                 photo(l, interaction, visual).also { captured ->
                     checkCameraTurn()
-                    if (captured != null) keepPhoto(turn, captured)
+                    if (captured != null) {
+                        val kept = scene?.remember(captured)
+                        android.util.Log.i("DjangoVision", "Stored reference photo; frame=${kept?.frame ?: 0}")
+                        keepPhoto(turn, captured)
+                    }
                 }
             }
         } else null
-        val cameraForTurn: (suspend (CameraAction) -> Boolean)? = if (partner && !visualQuestion) {
+        val cameraForTurn: (suspend (CameraAction) -> Boolean)? = if (partner && !visualQuestion && (use != PhotoUse.REUSE || recording != null)) {
             { action ->
                 checkCameraTurn(action != CameraAction.STOP_RECORDING)
                 // Once sent, what the glasses did is the result, even if they closed the turn meanwhile.
@@ -1539,8 +1567,12 @@ class Assistant(
             }
         } else null
         // The glasses' OCR of the photo they took comes just after the question; a model without vision has only this.
-        val read = if (visual.glassesCaptured) withTimeoutOrNull(OCR_WAIT_MS) { l.ocrOf(interaction).await() } else null
+        val read = if (visual.glassesCaptured && use != PhotoUse.REUSE) withTimeoutOrNull(OCR_WAIT_MS) { l.ocrOf(interaction).await() } else null
         val note = listOfNotNull(
+            "The attached photo is the same earlier reference image in this conversation, not a new capture. Use it when relevant to the follow-up, and do not claim it is a new view. A new view needs an explicit look-again request."
+                .takeIf { live == null && use == PhotoUse.REUSE },
+            "The wearer explicitly asked for a photo analysis, but camera access is disabled in this app. Say that camera access must be enabled; do not guess what they see."
+                .takeIf { look && !store.config.value.vision },
             "The wearer seems to ask about what they see, but the photo from the glasses did not arrive; say so briefly."
                 .takeIf { visualQuestion && image == null && read.isNullOrBlank() },
             read?.takeIf { it.isNotBlank() }?.let { "The glasses' OCR read this text in what the wearer sees, line by line, with errors: ${it.take(MAX_OCR)}" },
@@ -1755,13 +1787,15 @@ class Assistant(
         val waiting = PendingImage(interaction)
         pending = waiting
         try {
-            early?.let { offerEarly(it) }
+            // A phone-requested capture must not reuse an unrelated photo that arrived before this question.
+            if (visual.glassesCaptured) early?.let { offerEarly(it) } else early = null
             if (waiting.image.isCompleted) return waiting.image.await()
             val killswitch = l.onFrameKillswitch[interaction]?.let { deep(it) } ?: "absent"
             say("Photo for the question: imageUuid ${present(visual.imageUuid)}, captureHandle ${present(visual.captureHandle)}, " +
                 "inline ${visual.inline?.let { "${it.size} bytes" } ?: "none"}, MMAI_ONFRAME_KILLSWITCH $killswitch")
             if (!visual.glassesCaptured) {
                 val m0 = l.m0 ?: return null
+                android.util.Log.i("DjangoVision", "Requesting camera capture")
                 val request = ThriftWriter().bool(1, false).bool(2, true).bool(3, false).str(4, interaction).done()
                 val failed = runCatching { l.mux.send(m0, netEvent(EV_REMOTE_IMAGE_CAPTURE_REQUEST, request), messageType = MT_NET_EVENT) }.exceptionOrNull()
                 if (failed != null) {

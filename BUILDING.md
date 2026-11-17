@@ -60,7 +60,7 @@ The helper can also read a private generated Java BuildConfig supplied through
 python3 build-django.py --identity-config /private/path/to/BuildConfig.java
 ```
 
-By default the helper runs all 61 app/assistant/media tests and assembles a signed
+By default the helper runs all 73 app/assistant/media tests and assembles a signed
 release using the companion's local development key. You can instead supply
 `VISOR_KEYSTORE`, `VISOR_KEYSTORE_PASSWORD` and `VISOR_KEY_ALIAS` through the process
 environment. Existing Visor environment-variable names are retained intentionally.

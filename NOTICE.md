@@ -21,6 +21,7 @@ Modifications by Marouane / [marouane53](https://github.com/marouane53), Novembe
 - Conversation ownership, timeout, follow-up and touch-stop handling.
 - Explicit handoff to an existing OpenAI dot through the native ChatGPT app.
 - Additional call aliases and voice camera routing.
+- Explicit photo-analysis requests and reuse of the reference image on follow-ups.
 - Selectable spoken notifications, including WhatsApp sender-only announcements.
 - Regression tests, setup documentation and build tooling for these changes.
 

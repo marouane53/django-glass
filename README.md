@@ -21,6 +21,7 @@ license. The [original Visor README](README-VISOR.md) is also preserved.
 | OpenAI Dots calls | “Hey Meta, open ChatGPT” hands off to an existing dot in the native ChatGPT app. Ask the dot to end the call and keep working. |
 | Call aliases | Call/open ChatGPT, Django, Dots and Jarvis, plus exact phrase variants. |
 | Voice capture | “Take a picture” captures a photo; “Start recording” launches a video. |
+| Photo analysis | “Look and…” attaches a glasses photo and your question to ChatGPT. Follow-ups reuse that photo; “look again and…” requests a new view. |
 | Spoken notifications | Choose sources and how much Finn reads. Dots and texts can read full messages; WhatsApp announces only the sender. |
 | Visor foundation | Retains upstream pairing, gallery, media import, device settings and other client features. |
 
@@ -30,7 +31,7 @@ This is an experimental personal build. The tested setup is Ray-Ban Meta Skyler
 on firmware `126.0.0.207.412`, paired with a Samsung Android 17 phone. Compatibility
 with other glasses, firmware and Android versions needs separate testing.
 
-Current source versions: **Django 0.22**, **Glasses Speech 0.7**. The application IDs
+Current source versions: **Django 0.24**, **Glasses Speech 0.7**. The application IDs
 remain `org.marouane.djangoglasses` and `org.marouane.glassesspeech`; the upstream
 `com.macedonga.visor` code namespace is retained to keep the changes reviewable.
 The speech companion requires Android 13 or later. Existing Dots access in the
@@ -43,11 +44,12 @@ Validated on hardware:
 - Dots call launch, voice hang-up and return to the normal assistant.
 - Screen-off call launch during Android's trusted-device window.
 - Photo capture and video launch with “Start recording.”
+- Photo analysis, same-photo follow-ups, and an explicit “look again” replacement capture (0.24).
 - Notification tone and Finn playback through the paired glasses.
 
 The notification policies have 12 unit tests and 10 on-device Android extraction
 checks. Real incoming app notifications and ringing calls still need live
-verification beyond the local preview and synthetic checks. There are 61
+verification beyond the local preview and synthetic checks. There are 73
 app/assistant/media unit tests in total, plus the companion's Java tests.
 
 ## Set up
@@ -88,8 +90,9 @@ For readouts, open **Settings → Notifications → Spoken notifications**. See
 ## Data flow
 
 - Meta authentication and glasses ownership use the existing upstream setup path.
-- The configured assistant provider receives the questions and context needed to
-  answer. Conversations may be stored in Django's local diary.
+- The configured assistant provider receives the questions, context and requested
+  scene photos needed to answer. Conversations and analysis photos may be stored
+  in Django's local diary.
 - The speech companion sends audio to the selected transcription provider and
   readout text to Google for Finn synthesis. MAI transcription uses OpenRouter;
   the MAI path can fall back to Gemini on provider errors.

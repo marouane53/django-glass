@@ -451,6 +451,8 @@ class Brain(
             input.put(JSONObject().put("role", "assistant").put("content", e.told()))
         }
         input.put(JSONObject().put("role", "user").put("content", inputContent(question, image)))
+        if (image != null && c.provider == Provider.CHATGPT)
+            android.util.Log.i("DjangoVision", "ChatGPT request includes question and JPEG; bytes=${image.size}")
         val functions = turn?.let { specs(c, it) }.orEmpty().map { (name, help, schema) ->
             JSONObject().put("type", "function").put("name", name).put("description", help)
                 .put("parameters", JSONObject(schema.toString()).apply { remove("\$schema") })
