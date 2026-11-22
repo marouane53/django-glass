@@ -1580,6 +1580,7 @@ class Assistant(
                 .takeIf { l.foreign },
         ).joinToString(" ")
         val waiting = CoroutineScope(currentCoroutineContext()).launch { holdOn(l, interaction) }
+        val modelStart = android.os.SystemClock.elapsedRealtime()
         val reply = try {
             // The glasses give up after their processing timeout; speech and streaming need the last seconds of it.
             val timeoutSeconds = processingTimeoutS() ?: FACTORY_PROCESSING_S
@@ -1600,6 +1601,7 @@ class Assistant(
             problem = error.why()
             Reply(fallback(spoken(l)))
         }
+        android.util.Log.i("DjangoTiming", "answer_ms=${android.os.SystemClock.elapsedRealtime() - modelStart} success=${problem.isEmpty()}")
         val text = reply.text
         val diaryText = text.ifEmpty { reply.actions.asAnswer() }
         // Without simplified forwarding the VARM follows the audio, and the glasses keep waiting for it until then.
@@ -1864,10 +1866,14 @@ class Assistant(
         val c = store.config.value
         if (c.tts == TtsPath.CLOUD) {
             try {
+                val start = android.os.SystemClock.elapsedRealtime()
                 val audio = withTimeoutOrNull(CLOUD_SPEECH_WAIT_MS) { cloudSpeech(c, text) }
                     ?: throw SpeechError("no answer in ${CLOUD_SPEECH_WAIT_MS / 1000} s")
+                val ready = android.os.SystemClock.elapsedRealtime()
                 say("Speech: ${text.length} characters from ${c.ttsModel}")
-                return voice.encode(audio)
+                val packets = voice.encode(audio)
+                android.util.Log.i("DjangoTiming", "cloud_speech_ms=${ready - start} opus_ms=${android.os.SystemClock.elapsedRealtime() - ready}")
+                return packets
             } catch (cancel: CancellationException) {
                 throw cancel
             } catch (error: Exception) {

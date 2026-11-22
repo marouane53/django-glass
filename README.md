@@ -31,7 +31,7 @@ This is an experimental personal build. The tested setup is Ray-Ban Meta Skyler
 on firmware `126.0.0.207.412`, paired with a Samsung Android 17 phone. Compatibility
 with other glasses, firmware and Android versions needs separate testing.
 
-Current source versions: **Django 0.25**, **Glasses Speech 0.7**. The application IDs
+Current source versions: **Django 0.26**, **Glasses Speech 0.7**. The application IDs
 remain `org.marouane.djangoglasses` and `org.marouane.glassesspeech`; the upstream
 `com.macedonga.visor` code namespace is retained to keep the changes reviewable.
 The speech companion requires Android 13 or later. Existing Dots access in the

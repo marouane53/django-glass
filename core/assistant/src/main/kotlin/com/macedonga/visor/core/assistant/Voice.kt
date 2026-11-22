@@ -17,7 +17,9 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -130,7 +132,7 @@ class Voice(private val context: Context) {
     }
 
     /** The platform Opus encoder, one packet per output buffer, codec config left out. */
-    private fun encodeOpus(pcm: ShortArray): List<OpusPacket> {
+    private suspend fun encodeOpus(pcm: ShortArray): List<OpusPacket> {
         val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, 48_000, 1).apply {
             setInteger(MediaFormat.KEY_BIT_RATE, 32_000)
         }
@@ -144,27 +146,37 @@ class Voice(private val context: Context) {
             val raw = bytes.array()
             var fed = 0
             var inputDone = false
+            var outputDone = false
             val info = MediaCodec.BufferInfo()
-            while (true) {
-                if (!inputDone) {
-                    val index = codec.dequeueInputBuffer(10_000)
-                    if (index >= 0) {
-                        val buffer = checkNotNull(codec.getInputBuffer(index))
-                        val take = minOf(buffer.capacity(), raw.size - fed) and 1.inv()
-                        val pts = fed / 2 * 1_000_000L / 48_000
-                        if (take <= 0) {
-                            codec.queueInputBuffer(index, 0, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                            inputDone = true
-                        } else {
-                            buffer.clear()
-                            buffer.put(raw, fed, take)
-                            codec.queueInputBuffer(index, 0, take, pts, 0)
-                            fed += take
-                        }
+            while (!outputDone) {
+                currentCoroutineContext().ensureActive()
+                // Keep the input slots full, then drain every ready packet. Waiting for output
+                // after each input buffer stalls even when the encoder can accept more audio.
+                var queued = false
+                while (!inputDone) {
+                    val index = codec.dequeueInputBuffer(0)
+                    if (index < 0) break
+                    val buffer = checkNotNull(codec.getInputBuffer(index))
+                    val take = minOf(buffer.capacity(), raw.size - fed) and 1.inv()
+                    val pts = fed / 2 * 1_000_000L / 48_000
+                    if (take <= 0) {
+                        codec.queueInputBuffer(index, 0, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        inputDone = true
+                    } else {
+                        buffer.clear()
+                        buffer.put(raw, fed, take)
+                        codec.queueInputBuffer(index, 0, take, pts, 0)
+                        fed += take
                     }
+                    queued = true
                 }
-                val out = codec.dequeueOutputBuffer(info, 10_000)
-                if (out >= 0) {
+                // If neither side is ready, wait briefly so we don't spin or starve the input.
+                var waitUs = if (queued) 0L else 2_000L
+                while (!outputDone) {
+                    val out = codec.dequeueOutputBuffer(info, waitUs)
+                    waitUs = 0
+                    if (out == MediaCodec.INFO_TRY_AGAIN_LATER) break
+                    if (out < 0) continue // Format or output buffers changed.
                     val buffer = checkNotNull(codec.getOutputBuffer(out))
                     if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0 && info.size > 0) {
                         val data = ByteArray(info.size)
@@ -173,7 +185,7 @@ class Voice(private val context: Context) {
                         packets += OpusPacket(data, opusDurationUs(data))
                     }
                     codec.releaseOutputBuffer(out, false)
-                    if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
+                    outputDone = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
                 }
             }
         } finally {
