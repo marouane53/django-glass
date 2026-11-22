@@ -12,7 +12,7 @@
 From the repository root:
 
 ```sh
-./gradlew :app:testDebugUnitTest :core:assistant:testDebugUnitTest :core:media:testDebugUnitTest :app:assembleDebug :app:assembleRelease
+./gradlew :app:testDebugUnitTest :core:assistant:testDebugUnitTest :core:media:testDebugUnitTest :core:settings:testDebugUnitTest :app:assembleDebug :app:assembleRelease
 ```
 
 The build succeeds without Meta client configuration. Pairing and Meta sign-in
@@ -60,7 +60,7 @@ The helper can also read a private generated Java BuildConfig supplied through
 python3 build-django.py --identity-config /private/path/to/BuildConfig.java
 ```
 
-By default the helper runs all 73 app/assistant/media tests and assembles a signed
+By default the helper runs the app, assistant, media and settings tests and assembles a signed
 release using the companion's local development key. You can instead supply
 `VISOR_KEYSTORE`, `VISOR_KEYSTORE_PASSWORD` and `VISOR_KEY_ALIAS` through the process
 environment. Existing Visor environment-variable names are retained intentionally.

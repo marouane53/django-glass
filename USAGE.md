@@ -28,6 +28,10 @@ The current launcher recognizes the ChatGPT composer's **Message Django** and
 The native ChatGPT app and its current interface are dependencies of this path.
 See [DOTS.md](DOTS.md).
 
+For a regular phone call, allow Contacts access and say **“Hey Meta, call
+[contact name].”** The Android contacts sync runs after the glasses reconnect
+and updates existing entries with the correct phone numbers.
+
 ## Camera commands
 
 For photo analysis, say **“Hey Meta, look and tell me what this is.”** Django
@@ -70,5 +74,6 @@ separate control. WhatsApp offers Off or Sender only. Dots and texts can read th
 full message. Other apps are off until individually selected.
 
 Announcements wait until assistant conversations and calls end, expire while
-queued, and respect Do Not Disturb. They use the configured cloud voice and
-the paired glasses' Bluetooth audio route. See [NOTIFICATIONS.md](NOTIFICATIONS.md).
+queued, and respect your phone's Do Not Disturb exceptions. Turn on
+**Settings → Notifications → Only while phone is locked** to keep alerts on
+the phone while you're using it. See [NOTIFICATIONS.md](NOTIFICATIONS.md).

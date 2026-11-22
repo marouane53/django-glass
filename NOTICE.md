@@ -25,6 +25,14 @@ Modifications by Marouane / [marouane53](https://github.com/marouane53), Novembe
 - Selectable spoken notifications, including WhatsApp sender-only announcements.
 - Regression tests, setup documentation and build tooling for these changes.
 
+Selected changes from [Visor v3.1.0](https://github.com/macedonga/visor/releases/tag/v3.1.0)
+are also included, with credit to their upstream contributors: lock-only
+notifications ([f189f860](https://github.com/macedonga/visor/commit/f189f860))
+and Do Not Disturb filtering ([12e3821a](https://github.com/macedonga/visor/commit/12e3821a)),
+adapted for Django's Finn reader, and the contact number encoding fix
+([79b475a7](https://github.com/macedonga/visor/commit/79b475a7),
+[b89e0b3f](https://github.com/macedonga/visor/commit/b89e0b3f)).
+
 The complete modified project, including the speech companion, is distributed
 under the GNU Affero General Public License version 3. See [LICENSE](LICENSE).
 The license file is retained verbatim from the upstream snapshot. Third-party

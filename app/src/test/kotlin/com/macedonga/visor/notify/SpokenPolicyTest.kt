@@ -59,6 +59,41 @@ class SpokenPolicyTest {
         assertEquals("WhatsApp message from Someone.", spokenLine(notice().copy(sender = ""), SpokenOptions()))
     }
 
+    @Test fun lockOnlyDeliveryStopsWhenThePhoneIsOpened() {
+        var phoneLockedOrOff = true
+        fun allowed(onlyLocked: Boolean) = passesDeliveryPolicy(
+            onlyLocked, preview = false, matchesInterruptionFilter = true,
+            phoneLockedOrOff = { phoneLockedOrOff }, dndOff = { true },
+        )
+
+        assertTrue(allowed(onlyLocked = true))
+        phoneLockedOrOff = false
+        assertFalse(allowed(onlyLocked = true))
+        assertTrue(allowed(onlyLocked = false))
+    }
+
+    @Test fun dndExceptionsAreHonoredWithoutAdmittingUnrankedNotifications() {
+        fun allowed(matches: Boolean?, dndOff: Boolean) = passesDeliveryPolicy(
+            onlyLocked = false, preview = false, matchesInterruptionFilter = matches,
+            phoneLockedOrOff = { false }, dndOff = { dndOff },
+        )
+        assertTrue(allowed(matches = true, dndOff = false))
+        assertFalse(allowed(matches = false, dndOff = false))
+        assertFalse(allowed(matches = null, dndOff = false))
+        assertTrue(allowed(matches = null, dndOff = true))
+    }
+
+    @Test fun localPreviewWorksWithTheSettingsOpenButStillHonorsDnd() {
+        fun allowed(dndOff: Boolean) = passesDeliveryPolicy(
+            onlyLocked = true, preview = true, matchesInterruptionFilter = null,
+            phoneLockedOrOff = { false }, dndOff = { dndOff },
+        )
+        assertTrue(allowed(dndOff = true))
+        assertFalse(allowed(dndOff = false))
+        val preview = notice(NoticeSource.DOTS).copy(preview = true, sender = "", body = "Notifications are ready.")
+        assertEquals("Django Dots. Notifications are ready.", spokenLine(preview, SpokenOptions(dots = ReadAmount.OFF)))
+    }
+
     @Test fun onlyAgentChannelsOrExplicitlyNamedDotRepliesMatch() {
         assertTrue(dotNotice("codex", "Finished"))
         assertTrue(dotNotice("codex_remote_avatar", "Django"))

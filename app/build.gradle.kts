@@ -11,9 +11,9 @@ android {
 
     defaultConfig {
         applicationId = "org.marouane.djangoglasses"
-        // A release build takes both from its tag (.github/workflows/release.yml).
-        versionCode = providers.environmentVariable("VISOR_VERSION_CODE").orNull?.toInt() ?: 24
-        versionName = providers.environmentVariable("VISOR_VERSION_NAME").orNull ?: "0.24-django"
+        // Release builds can override both through the environment.
+        versionCode = providers.environmentVariable("VISOR_VERSION_CODE").orNull?.toInt() ?: 25
+        versionName = providers.environmentVariable("VISOR_VERSION_NAME").orNull ?: "0.25-django"
         buildConfigField("boolean", "TAGGED", "false")
     }
 

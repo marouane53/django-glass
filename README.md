@@ -22,7 +22,7 @@ license. The [original Visor README](README-VISOR.md) is also preserved.
 | Call aliases | Call/open ChatGPT, Django, Dots and Jarvis, plus exact phrase variants. |
 | Voice capture | “Take a picture” captures a photo; “Start recording” launches a video. |
 | Photo analysis | “Look and…” attaches a glasses photo and your question to ChatGPT. Follow-ups reuse that photo; “look again and…” requests a new view. |
-| Spoken notifications | Choose sources and how much Finn reads. Dots and texts can read full messages; WhatsApp announces only the sender. |
+| Spoken notifications | Choose what Finn reads and limit announcements to when your phone is locked. Dots and texts can read full messages; WhatsApp announces only the sender. |
 | Visor foundation | Retains upstream pairing, gallery, media import, device settings and other client features. |
 
 ## Status and compatibility
@@ -31,7 +31,7 @@ This is an experimental personal build. The tested setup is Ray-Ban Meta Skyler
 on firmware `126.0.0.207.412`, paired with a Samsung Android 17 phone. Compatibility
 with other glasses, firmware and Android versions needs separate testing.
 
-Current source versions: **Django 0.24**, **Glasses Speech 0.7**. The application IDs
+Current source versions: **Django 0.25**, **Glasses Speech 0.7**. The application IDs
 remain `org.marouane.djangoglasses` and `org.marouane.glassesspeech`; the upstream
 `com.macedonga.visor` code namespace is retained to keep the changes reviewable.
 The speech companion requires Android 13 or later. Existing Dots access in the
@@ -47,10 +47,9 @@ Validated on hardware:
 - Photo analysis, same-photo follow-ups, and an explicit “look again” replacement capture (0.24).
 - Notification tone and Finn playback through the paired glasses.
 
-The notification policies have 12 unit tests and 10 on-device Android extraction
-checks. Real incoming app notifications and ringing calls still need live
-verification beyond the local preview and synthetic checks. There are 73
-app/assistant/media unit tests in total, plus the companion's Java tests.
+Unit tests cover notification delivery policy and the contact format used for
+calling by name. Live tests of the new notification rules and contact calling
+are separate from the synthetic checks.
 
 ## Set up
 

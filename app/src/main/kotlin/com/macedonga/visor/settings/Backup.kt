@@ -126,7 +126,8 @@ class Backups @Inject constructor(
                     // The speech service's key stays out, like the model's.
                     .put("tts", a.tts.name).put("ttsBaseUrl", a.ttsBaseUrl).put("ttsModel", a.ttsModel).put("ttsVoice", a.ttsVoice),
             )
-            .put("notifications", JSONObject().put("enabled", notify.enabled.value).put("muted", JSONArray(apps.muted.value.sorted()))
+            .put("notifications", JSONObject().put("enabled", notify.enabled.value).put("onlyLocked", notify.onlyLocked.value)
+                .put("muted", JSONArray(apps.muted.value.sorted()))
                 .put("spoken", spoken.options.value.let { o -> JSONObject().put("dots", o.dots.name).put("whatsapp", o.whatsapp.name)
                     .put("sms", o.sms.name).put("calls", o.calls).put("chime", o.chime).put("other", JSONArray(o.other.sorted())) }))
             .put("import", import.mode.value.name)
@@ -223,6 +224,7 @@ class Backups @Inject constructor(
             }
         }
         backup.optJSONObject("notifications")?.let { o ->
+            if (o.has("onlyLocked")) notify.setOnlyLocked(o.optBoolean("onlyLocked", notify.onlyLocked.value))
             notify.set(o.optBoolean("enabled", true))
             o.optJSONArray("muted")?.let { a -> apps.restore(a.strings().toSet()) }
             o.optJSONObject("spoken")?.let { s ->

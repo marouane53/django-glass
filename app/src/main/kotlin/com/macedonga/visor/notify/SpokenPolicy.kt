@@ -18,6 +18,7 @@ data class SpokenNotice(
     val summary: Boolean = false,
     val ongoing: Boolean = false,
     val incomingCall: Boolean = false,
+    val preview: Boolean = false,
 )
 
 data class SpokenOptions(
@@ -28,7 +29,7 @@ data class SpokenOptions(
     val chime: Boolean = true,
     val other: Set<String> = emptySet(),
 ) {
-    fun amount(n: SpokenNotice): ReadAmount = when (n.source) {
+    fun amount(n: SpokenNotice): ReadAmount = if (n.preview) ReadAmount.FULL else when (n.source) {
         NoticeSource.DOTS -> dots
         NoticeSource.WHATSAPP -> if (whatsapp == ReadAmount.OFF) ReadAmount.OFF else ReadAmount.SENDER
         NoticeSource.SMS -> sms
@@ -36,6 +37,15 @@ data class SpokenOptions(
         NoticeSource.OTHER -> if (n.pkg in other) ReadAmount.FULL else ReadAmount.OFF
     }
 }
+
+/** Use Android's per-notification DND decision, including exceptions. Without a ranking, require DND off. */
+internal inline fun passesDeliveryPolicy(
+    onlyLocked: Boolean,
+    preview: Boolean,
+    matchesInterruptionFilter: Boolean?,
+    phoneLockedOrOff: () -> Boolean,
+    dndOff: () -> Boolean,
+): Boolean = (preview || !onlyLocked || phoneLockedOrOff()) && (matchesInterruptionFilter ?: dndOff())
 
 /** Ordinary ChatGPT promotions, streaming notices and voice-session controls are excluded. */
 fun dotNotice(channel: String, title: String): Boolean =

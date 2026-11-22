@@ -1,6 +1,5 @@
 package com.macedonga.visor.notify
 
-import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
@@ -51,12 +50,11 @@ class SpokenReader @Inject constructor(
     private val dots: DotCallController,
 ) {
     private val audio = context.getSystemService(AudioManager::class.java)
-    private val notifications = context.getSystemService(NotificationManager::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val queue = LinkedHashMap<String, SpokenNotice>()
     private val seen = LinkedHashSet<String>()
     private val removed = LinkedHashSet<String>()
-    @Volatile private var attached = false
+    @Volatile private var currentInterruptionMatch: ((String) -> Boolean?)? = null
     @Volatile private var playing: Job? = null
     @Volatile private var currentKey: String? = null
     @Volatile private var currentNotice: SpokenNotice? = null
@@ -69,7 +67,7 @@ class SpokenReader @Inject constructor(
         scope.launch {
             while (isActive) {
                 if (playing?.isActive == true && (!choice.enabled.value || busy(currentNotice))) interrupt()
-                if (attached && playing?.isActive != true) next()?.let { n ->
+                if (currentInterruptionMatch != null && playing?.isActive != true) next()?.let { n ->
                     playing = launch { announce(n) }
                 }
                 delay(100)
@@ -77,8 +75,8 @@ class SpokenReader @Inject constructor(
         }
     }
 
-    fun offer(n: SpokenNotice) {
-        if (!choice.enabled.value || spokenLine(n, settings.options.value) == null || !fresh(n)) return
+    fun offer(n: SpokenNotice, matchesInterruptionFilter: Boolean?) {
+        if (!choice.allowsDelivery(matchesInterruptionFilter, n.preview) || spokenLine(n, settings.options.value) == null || !fresh(n)) return
         // Reposts and progress updates of the same message should not talk again.
         val fingerprint = "${n.key}|${n.stamp}|${n.sender.hashCode()}|${n.body.hashCode()}"
         synchronized(queue) {
@@ -109,19 +107,23 @@ class SpokenReader @Inject constructor(
         runCatching { track?.pause() }
     }
 
-    fun connected() { attached = true }
+    fun connected(interruptionMatch: (String) -> Boolean?) { currentInterruptionMatch = interruptionMatch }
     fun disconnected() {
-        attached = false
+        currentInterruptionMatch = null
         interrupt()
         synchronized(queue) { queue.clear() }
     }
 
     private fun fresh(n: SpokenNotice) = System.currentTimeMillis() - n.posted in 0..(if (n.incomingCall) 12_000L else 120_000L)
 
+    private fun allowsDelivery(n: SpokenNotice): Boolean {
+        val match = currentInterruptionMatch ?: return false
+        return choice.allowsDelivery(if (n.preview) null else match(n.key), n.preview)
+    }
+
     private fun next(): SpokenNotice? = synchronized(queue) {
         val n = queue.values.firstOrNull { it.incomingCall } ?: queue.values.firstOrNull() ?: return null
-        if (!fresh(n) || !choice.enabled.value || spokenLine(n, settings.options.value) == null ||
-            notifications.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) {
+        if (!fresh(n) || !allowsDelivery(n) || spokenLine(n, settings.options.value) == null) {
             queue.remove(n.key)
             return null
         }
@@ -151,15 +153,15 @@ class SpokenReader @Inject constructor(
     private suspend fun announce(n: SpokenNotice) {
         currentKey = n.key
         currentNotice = n
+        val preparing = "Preparing ${n.source.label} announcement"
         try {
             val line = spokenLine(n, settings.options.value) ?: return
-            _status.value = "Preparing ${n.source.label} announcement"
+            _status.value = preparing
             for ((index, chunk) in speechChunks(line).withIndex()) {
+                if (!canAnnounce(n, line)) return
                 val pcm = withTimeout(35_000) { cloudSpeech(config.config.value, chunk) }
                 currentCoroutineContext().ensureActive()
-                if (!attached || synchronized(queue) { n.key in removed } || busy(n) || !fresh(n) || !choice.enabled.value || spokenLine(n, settings.options.value) != line ||
-                    notifications.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) return
-                play(pcm, n, index == 0 && settings.options.value.chime)
+                if (!canAnnounce(n, line) || !play(pcm, n, index == 0 && settings.options.value.chime)) return
             }
             _status.value = "Last announcement played through glasses"
             android.util.Log.i("DjangoNotify", "Played source=${n.source}; route=glasses")
@@ -171,13 +173,18 @@ class SpokenReader @Inject constructor(
             _status.value = "Could not play announcement; check Glasses Speech and Bluetooth audio"
             android.util.Log.w("DjangoNotify", "Announcement unavailable; no speaker fallback")
         } finally {
+            _status.compareAndSet(preparing, "Ready for selected notifications")
             currentKey = null
             currentNotice = null
         }
     }
 
-    private suspend fun play(pcm: SpeechPcm, n: SpokenNotice, chime: Boolean) {
-        val device = sink() ?: return
+    private fun canAnnounce(n: SpokenNotice, line: String): Boolean =
+        allowsDelivery(n) && fresh(n) && !busy(n) && !synchronized(queue) { n.key in removed } &&
+            spokenLine(n, settings.options.value) == line
+
+    private suspend fun play(pcm: SpeechPcm, n: SpokenNotice, chime: Boolean): Boolean {
+        val device = sink() ?: return false
         val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
         val focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(attributes)
             .setOnAudioFocusChangeListener({ change -> if (change < 0) interrupt() }, Handler(Looper.getMainLooper())).build()
@@ -200,18 +207,19 @@ class SpokenReader @Inject constructor(
             track = t
             check(t.setPreferredDevice(device))
             check(t.write(samples, 0, samples.size) == samples.size)
+            if (!allowsDelivery(n)) return false
             t.play()
             delay(180)
             check(t.routedDevice?.id == device.id) { "Wrong audio route" }
             android.util.Log.i("DjangoNotify", "Verified glasses audio route; type=${device.type}")
-            withTimeout(samples.size * 1000L / pcm.rate + 3_000L) {
+            return withTimeout(samples.size * 1000L / pcm.rate + 3_000L) {
                 val amount = settings.options.value.amount(n)
                 while (t.playbackHeadPosition < samples.size) {
                     check(t.routedDevice?.id == device.id && !busy(n))
-                    check(choice.enabled.value && fresh(n) && settings.options.value.amount(n) == amount &&
-                        notifications.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL)
+                    if (!allowsDelivery(n) || !fresh(n) || settings.options.value.amount(n) != amount) return@withTimeout false
                     delay(20)
                 }
+                true
             }
         } finally {
             track = null
@@ -223,5 +231,5 @@ class SpokenReader @Inject constructor(
     /** Local preview; no message is sent and no real notification is consumed. */
     fun test() = offer(SpokenNotice("django-test-${System.nanoTime()}", context.packageName, NoticeSource.DOTS,
         "Django", "", "Notifications are ready. WhatsApp announcements will say only who sent the message.",
-        System.currentTimeMillis(), System.currentTimeMillis()))
+        System.currentTimeMillis(), System.currentTimeMillis(), preview = true), matchesInterruptionFilter = null)
 }

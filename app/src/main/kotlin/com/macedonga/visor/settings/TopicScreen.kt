@@ -41,6 +41,7 @@ fun TopicScreen(name: String, open: (NavKey) -> Unit, model: SettingsViewModel =
                 val on by model.notifyChoice.enabled.collectAsStateWithLifecycle()
                 Rows(
                     { VisorToggleRow(model.toggles.byId("notifications")!!) },
+                    if (on) row { VisorToggleRow(model.toggles.byId("notifications_locked")!!) } else null,
                     if (on) row {
                         ValueRow(
                             "Spoken notifications",

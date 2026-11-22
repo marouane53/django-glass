@@ -498,6 +498,8 @@
     <string name="tile_refused">Refused</string>
     <string name="settings_notifications">Notifications on the glasses</string>
     <string name="settings_notifications_sub">Choose which notifications Finn reads through your glasses.</string>
+    <string name="notify_only_locked">Only while phone is locked</string>
+    <string name="notify_only_locked_sub">Send notifications to the glasses only when the lock screen is showing or the screen is off.</string>
 
     <string name="topic_meta_ai">Meta AI</string>
     <string name="topic_language">Language and voice</string>

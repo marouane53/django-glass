@@ -120,6 +120,7 @@ class VisorToggles @Inject constructor(
 
     val all: List<VisorToggle> = listOf(
         VisorToggle("notifications", R.string.settings_notifications, R.string.settings_notifications_sub, Topic.NOTIFICATIONS, notify.enabled, notify::set),
+        VisorToggle("notifications_locked", R.string.notify_only_locked, R.string.notify_only_locked_sub, Topic.NOTIFICATIONS, notify.onlyLocked, notify::setOnlyLocked),
         VisorToggle(
             "assistant", R.string.ai_answer, R.string.ai_answer_sub, Topic.META_AI,
             assistant.config.on { it.enabled }, { on -> assistant.update { it.copy(enabled = on) } },

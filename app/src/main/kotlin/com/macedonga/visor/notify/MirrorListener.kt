@@ -75,8 +75,10 @@ class MirrorListener : NotificationListenerService(), Messaging {
     // The newest conversation sent to the glasses that its app lets answer.
     @Volatile private var announced: Conversation? = null
 
+    private data class PendingNotification(val notice: GlassesNotification, val reply: Conversation?)
+
     // What came while the wearer was talking with the assistant, newest per notification, and since when.
-    private val held = LinkedHashMap<String, GlassesNotification>()
+    private val held = LinkedHashMap<String, PendingNotification>()
     private var heldSince = 0L
     private var releasing: Job? = null
 
@@ -93,7 +95,7 @@ class MirrorListener : NotificationListenerService(), Messaging {
     private val onSessions = MediaSessionManager.OnActiveSessionsChangedListener { reportMedia(it.orEmpty()) }
 
     override fun onListenerConnected() {
-        spoken.connected()
+        spoken.connected(::currentInterruptionMatch)
         assistant.messaging = this
         activeNotifications?.filter { it.packageName == com.macedonga.visor.dots.DotCallController.CHATGPT }?.forEach(dotCalls::posted)
         val manager = getSystemService(MediaSessionManager::class.java)
@@ -141,17 +143,16 @@ class MirrorListener : NotificationListenerService(), Messaging {
     }
 
     private fun posted(sbn: StatusBarNotification, rankingMap: RankingMap) {
+        val rank = rankingMap.rankFor(sbn.key)
         if (!display()) {
             // Audio-only glasses use the explicit Finn allowlist. Never also send a native readout.
-            val r = Ranking()
-            if (rankingMap.getRanking(sbn.key, r) &&
-                (r.importance < NotificationManager.IMPORTANCE_DEFAULT || r.isSuspended || !r.matchesInterruptionFilter())) return
+            if (rank != null && (rank.importance < NotificationManager.IMPORTANCE_DEFAULT || rank.isSuspended)) return
             val n = spokenNotice(this, sbn) ?: return
             apps.saw(sbn.packageName)
-            spoken.offer(n)
+            spoken.offer(n, rank?.matchesInterruptionFilter())
             return
         }
-        if (!wanted(sbn, rankingMap)) return
+        if (!wanted(sbn, rank)) return
         val display = display()
         // The Messages app's conversations are kept whether or not the glasses listen: the Display's list reads them.
         val sms = sbn.packageName == Telephony.Sms.getDefaultSmsPackage(this)
@@ -162,18 +163,17 @@ class MirrorListener : NotificationListenerService(), Messaging {
         val chatProvider = PROVIDERS[sbn.packageName] ?: GlassesNotification.PROVIDER_WHATSAPP.takeIf { !display && chat(sbn.notification) }
         if (chatProvider == null && !display) return
         apps.saw(sbn.packageName)
-        if (!choice.enabled.value || !ready() || sbn.packageName in apps.muted.value) return
+        if (!choice.allowsDelivery(rank?.matchesInterruptionFilter()) || !ready() || sbn.packageName in apps.muted.value) return
         val n = sbn.notification
         val extras = n.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty()
         val appName = runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString() }.getOrDefault(sbn.packageName)
-        val r = Ranking()
         // The phone's texts, SMS or RCS, go as native messages, which the glasses' Messages app files by thread.
         (if (sms) GlassesNotification.PROVIDER_NATIVE else chatProvider)?.let { provider ->
             message(sbn, provider, appName)?.let { m ->
-                deliver(m)
-                if (replyAction(n) != null) announced = Conversation(sbn.key, m.sender, appName)
+                val reply = if (replyAction(n) != null) Conversation(sbn.key, m.sender, appName) else null
+                deliver(m, reply)
             }
             return
         }
@@ -188,7 +188,7 @@ class MirrorListener : NotificationListenerService(), Messaging {
             provider = GlassesNotification.PROVIDER_MIRRORED,
             actions = n.actions?.mapNotNull { it.title?.toString()?.takeIf(String::isNotEmpty) }.orEmpty(),
             icon = icon(sbn.packageName),
-            importance = if (rankingMap.getRanking(sbn.key, r)) r.importance else NotificationManager.IMPORTANCE_DEFAULT,
+            importance = rank?.importance ?: NotificationManager.IMPORTANCE_DEFAULT,
             flags = n.flags,
             category = n.category,
             channel = n.channelId,
@@ -196,24 +196,32 @@ class MirrorListener : NotificationListenerService(), Messaging {
         deliver(note)
     }
 
+    private fun RankingMap?.rankFor(key: String): Ranking? = Ranking().takeIf { this?.getRanking(key, it) == true }
+
+    private fun currentInterruptionMatch(key: String): Boolean? = currentRanking.rankFor(key)?.matchesInterruptionFilter()
+
     /** To the glasses now, or once the conversation with the assistant is over. */
-    private fun deliver(note: GlassesNotification) {
+    private fun deliver(note: GlassesNotification, reply: Conversation? = null) {
+        val pending = PendingNotification(note, reply)
         if (talking()) {
             if (held.isEmpty()) heldSince = System.currentTimeMillis()
             held.remove(note.key)
-            held[note.key] = note
+            held[note.key] = pending
             if (releasing?.isActive != true) releasing = scope.launch { release() }
             return
         }
-        send(note)
+        send(pending)
     }
 
-    private fun send(note: GlassesNotification) {
+    private fun send(pending: PendingNotification) {
+        val (note, reply) = pending
+        if (!choice.allowsDelivery(currentInterruptionMatch(note.key))) return
         mirrored.remove(note.key)
         mirrored[note.key] = note.provider to note.uuid
         while (mirrored.size > MAX_KEPT) mirrored.remove(mirrored.keys.first())
         val envelope = note.envelope()
         connection.submit { it.sendOnService(GlassesNotification.SVC, GlassesNotification.MT_UPSERT_CHUNK, envelope) }
+        if (reply != null) announced = reply
     }
 
     private fun removed(sbn: StatusBarNotification) {
@@ -414,14 +422,13 @@ class MirrorListener : NotificationListenerService(), Messaging {
 
     // Nothing ongoing, no group summaries, nothing empty or below default
     // importance, and not the dialer, whose calls reach the glasses by Bluetooth already.
-    private fun wanted(sbn: StatusBarNotification, ranking: RankingMap): Boolean {
+    private fun wanted(sbn: StatusBarNotification, rank: Ranking?): Boolean {
         val n = sbn.notification
         if (sbn.packageName == packageName || sbn.packageName in SYSTEM) return false
         if (n.flags and Notification.FLAG_ONGOING_EVENT != 0 || n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return false
         val extras = n.extras
         if (extras.getCharSequence(Notification.EXTRA_TITLE).isNullOrBlank() && extras.getCharSequence(Notification.EXTRA_TEXT).isNullOrBlank()) return false
-        val r = Ranking()
-        if (ranking.getRanking(sbn.key, r) && r.importance < NotificationManager.IMPORTANCE_DEFAULT) return false
+        if (rank != null && rank.importance < NotificationManager.IMPORTANCE_DEFAULT) return false
         if (sbn.packageName == getSystemService(TelecomManager::class.java)?.defaultDialerPackage) return false
         return true
     }

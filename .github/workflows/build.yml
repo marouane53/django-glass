@@ -31,7 +31,7 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Test and compile Django
-        run: ./gradlew :app:testDebugUnitTest :core:assistant:testDebugUnitTest :core:media:testDebugUnitTest :app:assembleDebug :app:assembleRelease
+        run: ./gradlew :app:testDebugUnitTest :core:assistant:testDebugUnitTest :core:media:testDebugUnitTest :core:settings:testDebugUnitTest :app:assembleDebug :app:assembleRelease
       - name: Test the speech companion
         run: |
           mkdir -p speech-adapter/build/unit-tests

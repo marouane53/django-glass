@@ -10,7 +10,10 @@ import sys
 ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
 parser.add_argument("--identity-config", type=Path, help="Private, temporary publisher BuildConfig extracted from the official APK")
-parser.add_argument("tasks", nargs="*", default=[":app:testDebugUnitTest", ":core:assistant:testDebugUnitTest", ":core:media:testDebugUnitTest", ":app:assembleRelease"])
+parser.add_argument("tasks", nargs="*", default=[
+    ":app:testDebugUnitTest", ":core:assistant:testDebugUnitTest", ":core:media:testDebugUnitTest",
+    ":core:settings:testDebugUnitTest", ":app:assembleRelease",
+])
 args = parser.parse_args()
 env = os.environ.copy()
 env.setdefault("JAVA_HOME", "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")

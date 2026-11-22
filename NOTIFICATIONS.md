@@ -15,8 +15,15 @@ its body never becomes part of the speech request. A separate switch controls
 the short tone before Finn speaks. Disabling call announcements leaves normal
 phone ringing in place. Choices are included in settings backups.
 
+Enable **Settings → Notifications → Only while phone is locked** to keep
+notifications on the phone while you're using it. The switch is off by default.
+When enabled, Django delivers notifications only with the lock screen showing
+or the screen off. The switch applies to Finn and to native notifications on
+glasses with a display.
+
 The **Test Finn notification** button plays a local preview. Wear the connected
-glasses and finish any assistant conversation first.
+glasses and finish any assistant conversation first. The preview works while
+the phone is unlocked, even with the lock-only switch enabled, if Do Not Disturb is off.
 
 ## Delivery behavior
 
@@ -32,7 +39,9 @@ glasses and finish any assistant conversation first.
 - Only new posts are handled; opening Django does not replay the existing inbox.
 - Outgoing messages, group summaries, ongoing progress, low-importance notices
   and notifications filtered by Android's interruption rules are excluded.
-  Do Not Disturb suppresses these custom announcements.
+  Do Not Disturb allows the exceptions you set on your phone. Django checks the
+  current lock state and interruption rules again before delivery and during
+  Finn playback. Skipped notifications aren't replayed.
 - Content and PCM are kept in memory. This feature's diagnostic logs contain
   source and routing metadata, without sender names or message bodies.
 
@@ -52,9 +61,9 @@ Incoming calls require explicit incoming CallStyle metadata and an available
 glasses audio route. Legacy notifications without those details are skipped.
 
 The local tone/Finn preview and a normal conversation with a follow-up passed
-hardware checks on 16 November 2026. Twelve policy tests and ten on-device Android
-extraction checks passed. Real incoming Dots, WhatsApp, SMS and ringing-call
-acceptance remains separate from those synthetic checks.
+hardware checks on 16 November 2026. Unit tests cover the lock and Do Not Disturb
+rules. Real incoming Dots, WhatsApp, SMS and ringing-call tests are separate
+from the synthetic notification checks.
 
 The default-SMS lookup uses the package query described in the
 [Android Telephony.Sms reference](https://developer.android.com/reference/android/provider/Telephony.Sms).
