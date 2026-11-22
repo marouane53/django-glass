@@ -337,6 +337,7 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
 
     /** The streamed call: the HTTP status and the final response; a stream that fails throws its error. */
     private suspend fun stream(body: JSONObject, token: String): Pair<Int, JSONObject> = suspendCancellableCoroutine { call ->
+        val start = android.os.SystemClock.elapsedRealtime()
         val http = URL("$OPENAI_API/responses").openConnection() as HttpURLConnection
         call.invokeOnCancellation { thread { http.disconnect() } }
         try {
@@ -361,6 +362,9 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
             val items = JSONArray()
             val deltas = StringBuilder()
             val seen = linkedMapOf<String, Int>()
+            val finalItems = mutableSetOf<String>()
+            var firstText = -1L
+            var firstFinal = -1L
             http.inputStream.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     if (!line.startsWith("data:")) continue
@@ -368,8 +372,19 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
                     val type = event.optString("type")
                     seen[type] = (seen[type] ?: 0) + 1
                     when (type) {
+                        "response.output_item.added" -> event.optJSONObject("item")?.let {
+                            if (it.optString("phase") == "final_answer") finalItems += it.optString("id")
+                        }
                         "response.output_item.done" -> event.optJSONObject("item")?.let(items::put)
-                        "response.output_text.delta" -> deltas.append(event.optString("delta"))
+                        "response.output_text.delta" -> {
+                            val delta = event.optString("delta")
+                            if (delta.isNotBlank()) {
+                                val elapsed = android.os.SystemClock.elapsedRealtime() - start
+                                if (firstText < 0) firstText = elapsed
+                                if (firstFinal < 0 && event.optString("item_id") in finalItems) firstFinal = elapsed
+                            }
+                            deltas.append(delta)
+                        }
                         "response.completed", "response.incomplete" -> {
                             done = event.getJSONObject("response")
                             break
@@ -381,6 +396,9 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
                 }
             }
             val answer = done ?: error("the answer stopped before it was complete")
+            val effort = body.optJSONObject("reasoning")?.optString("effort").orEmpty().ifEmpty { "default" }
+            android.util.Log.i("DjangoTiming", "plan_first_text_ms=$firstText plan_first_final_ms=$firstFinal " +
+                "plan_stream_ms=${android.os.SystemClock.elapsedRealtime() - start} plan_requested_effort=$effort")
             // OpenAI's own client reads the answer from the stream, not from the last event: the items, else the text.
             if ((answer.optJSONArray("output")?.length() ?: 0) == 0) {
                 when {

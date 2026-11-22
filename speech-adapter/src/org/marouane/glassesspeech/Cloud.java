@@ -15,6 +15,7 @@ final class Cloud {
         ProviderFailure(int value) { super("Speech provider HTTP " + value); status = value; }
     }
     static final String TTS_MODEL = "gemini-3.8-flash-tts";
+    static final String TTS_LITE_MODEL = "gemini-3.8-flash-lite-tts";
     static final String VOICE = "en-us-finn";
     static final String STT_MODEL = "microsoft/mai-transcribe-2";
     static final String GEMINI_STT_MODEL = "gemini-3.5-flash-lite";
@@ -43,13 +44,7 @@ final class Cloud {
     }
     static byte[] speak(Context c, JSONObject request) throws Exception {
         if (!TTS_MODEL.equals(request.optString("model"))) throw new IOException("Choose " + TTS_MODEL);
-        String voice = request.optString("voice");
-        if (!VOICE.equals(voice) && !"Finn".equalsIgnoreCase(voice)) throw new IOException("Choose voice " + VOICE);
-        String text = request.getString("input"); if (text.isBlank() || text.length() > 16000) throw new IOException("Invalid speech length");
-        JSONObject body = new JSONObject().put("model", TTS_MODEL)
-            .put("input", new JSONArray().put(new JSONObject().put("type", "user_input").put("content", new JSONArray().put(new JSONObject().put("type", "text").put("text", text)))))
-            .put("response_format", new JSONObject().put("type", "audio").put("mime_type", "audio/wav"))
-            .put("generation_config", new JSONObject().put("speech_config", new JSONArray().put(new JSONObject().put("voice", VOICE))));
+        JSONObject body = speechRequest(request, TTS_MODEL, "audio/wav");
         JSONObject result = post("https://generativelanguage.googleapis.com/v1beta/interactions", "x-goog-api-key", Vault.get(c, "gemini"), body);
         ByteArrayOutputStream out = new ByteArrayOutputStream(); JSONArray steps = result.optJSONArray("steps");
         if (steps != null) for (int i = 0; i < steps.length(); i++) {
@@ -60,6 +55,56 @@ final class Cloud {
         byte[] wav = out.toByteArray();
         if (wav.length < 44 || !new String(wav, 0, 4, StandardCharsets.US_ASCII).equals("RIFF")) throw new IOException("Speech provider returned no WAV audio");
         return wav;
+    }
+    private static JSONObject speechRequest(JSONObject request, String model, String mime) throws Exception {
+        String voice = request.optString("voice");
+        if (!VOICE.equals(voice) && !"Finn".equalsIgnoreCase(voice)) throw new IOException("Choose voice " + VOICE);
+        String text = request.getString("input"); if (text.isBlank() || text.length() > 16000) throw new IOException("Invalid speech length");
+        return new JSONObject().put("model", model)
+            .put("input", new JSONArray().put(new JSONObject().put("type", "user_input").put("content", new JSONArray().put(new JSONObject().put("type", "text").put("text", text)))))
+            .put("response_format", new JSONObject().put("type", "audio").put("mime_type", mime))
+            .put("generation_config", new JSONObject().put("speech_config", new JSONArray().put(new JSONObject().put("voice", VOICE))));
+    }
+    interface PcmSink { void write(byte[] data) throws IOException; }
+    static void streamSpeech(Context c, JSONObject request, PcmSink sink) throws Exception {
+        String model = request.optString("model");
+        if (!TTS_MODEL.equals(model) && !TTS_LITE_MODEL.equals(model)) throw new IOException("Unknown streaming speech model");
+        String key = Vault.get(c, "gemini");
+        if (key.isEmpty()) throw new IOException("API key is not configured");
+        JSONObject body = speechRequest(request, model, "audio/l16").put("stream", true);
+        body.getJSONObject("response_format").put("sample_rate", 24000);
+        byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
+        HttpURLConnection conn = (HttpURLConnection) new URL("https://generativelanguage.googleapis.com/v1beta/interactions").openConnection();
+        try {
+            conn.setInstanceFollowRedirects(false); conn.setConnectTimeout(4000); conn.setReadTimeout(15000);
+            conn.setRequestMethod("POST"); conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/json"); conn.setRequestProperty("Accept", "text/event-stream");
+            conn.setRequestProperty("x-goog-api-key", key); conn.setFixedLengthStreamingMode(payload.length);
+            try (OutputStream out = conn.getOutputStream()) { out.write(payload); }
+            int status = conn.getResponseCode();
+            if (status < 200 || status >= 300) throw new ProviderFailure(status);
+            int audioBytes = 0;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.startsWith("data:")) continue;
+                    JSONObject event = new JSONObject(line.substring(5));
+                    String type = event.optString("event_type");
+                    if ("interaction.completed".equals(type) && audioBytes > 0 && (audioBytes & 1) == 0) return;
+                    if ("error".equals(type) || type.contains("failed") || type.contains("cancelled")) break;
+                    JSONObject delta = event.optJSONObject("delta");
+                    if (!"step.delta".equals(type) || delta == null || !"audio".equals(delta.optString("type"))) continue;
+                    byte[] bytes = Base64.decode(delta.getString("data"), Base64.DEFAULT);
+                    if (bytes.length == 0) continue;
+                    if (audioBytes == 0 && bytes.length >= 4 && bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F')
+                        throw new IOException("Expected raw PCM");
+                    audioBytes += bytes.length;
+                    if (audioBytes > 32 * 1024 * 1024) throw new IOException("Speech response too large");
+                    sink.write(bytes);
+                }
+            }
+            throw new IOException("Speech stream did not complete");
+        } finally { conn.disconnect(); }
     }
     static byte[] wav(byte[] pcm, int rate) {
         ByteBuffer b = ByteBuffer.allocate(pcm.length + 44).order(ByteOrder.LITTLE_ENDIAN);

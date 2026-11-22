@@ -46,6 +46,22 @@ public class BridgeService extends Service {
         out.write(("HTTP/1.1 " + status + " Response\r\nContent-Type: " + type + "\r\nContent-Length: " + body.length + "\r\nConnection: close\r\nCache-Control: no-store\r\n\r\n").getBytes(StandardCharsets.US_ASCII)); out.write(body); out.flush();
     }
     private void json(Socket s, int status, String text) throws IOException { send(s, status, "application/json", text.getBytes(StandardCharsets.UTF_8)); }
+    // A failed or cancelled stream closes without the terminal chunk, so the client can detect a partial reply.
+    private static final class PcmResponse {
+        final OutputStream out;
+        boolean started;
+        PcmResponse(OutputStream out) { this.out = out; }
+        void write(byte[] pcm) throws IOException {
+            if (!started) {
+                started = true;
+                out.write(("HTTP/1.1 200 OK\r\nContent-Type: audio/l16; rate=24000; channels=1\r\n"
+                    + "Transfer-Encoding: chunked\r\nConnection: close\r\nCache-Control: no-store\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+            }
+            out.write((Integer.toHexString(pcm.length) + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            out.write(pcm); out.write('\r'); out.write('\n'); out.flush();
+        }
+        void finish() throws IOException { out.write("0\r\n\r\n".getBytes(StandardCharsets.US_ASCII)); out.flush(); }
+    }
     private void handle(Socket s) {
         try (s) {
             s.setSoTimeout(10000); InputStream in = new BufferedInputStream(s.getInputStream());
@@ -74,15 +90,27 @@ public class BridgeService extends Service {
                 getSharedPreferences("settings", 0).edit().putString("stt_provider", provider).commit(); json(s, 200, new JSONObject().put("provider", provider).toString()); return;
             }
             if (request[1].equals("/v1/models") && request[0].equals("GET")) { json(s, 200, "{\"object\":\"list\",\"data\":[{\"id\":\"" + Cloud.TTS_MODEL + "\",\"object\":\"model\"}]}"); return; }
-            if (!request[1].equals("/v1/audio/speech") || !request[0].equals("POST")) { json(s, 404, "{}"); return; }
+            boolean stream = request[1].equals("/v1/audio/speech/stream");
+            if ((!stream && !request[1].equals("/v1/audio/speech")) || !request[0].equals("POST")) { json(s, 404, "{}"); return; }
             int len = Integer.parseInt(headers.getOrDefault("content-length", "0"));
             if (len < 1 || len > 128000 || headers.containsKey("transfer-encoding")) { json(s, 400, "{\"error\":{\"message\":\"Invalid request size\"}}"); return; }
             byte[] body = in.readNBytes(len); if (body.length != len) throw new IOException("Incomplete request");
             if (!speech.tryAcquire()) { json(s, 429, "{\"error\":{\"message\":\"Speech already running\"}}"); return; }
             try {
-                byte[] wav = Cloud.speak(this, new JSONObject(new String(body, StandardCharsets.UTF_8)));
-                Cloud.status(this, "tts", true); send(s, 200, "audio/wav", wav);
-            } catch (Exception e) { Cloud.status(this, "tts", false); json(s, 502, "{\"error\":{\"message\":\"Gemini speech failed; check adapter settings and provider access\"}}"); }
+                if (stream) {
+                    PcmResponse response = new PcmResponse(s.getOutputStream());
+                    try {
+                        Cloud.streamSpeech(this, new JSONObject(new String(body, StandardCharsets.UTF_8)), response::write);
+                        response.finish(); Cloud.status(this, "tts", true);
+                    } catch (Exception e) {
+                        if (!response.started) json(s, 502, "{\"error\":{\"message\":\"Gemini speech stream unavailable\"}}");
+                        Cloud.status(this, "tts", false);
+                    }
+                } else {
+                    byte[] wav = Cloud.speak(this, new JSONObject(new String(body, StandardCharsets.UTF_8)));
+                    Cloud.status(this, "tts", true); send(s, 200, "audio/wav", wav);
+                }
+            } catch (Exception e) { Cloud.status(this, "tts", false); if (!stream) json(s, 502, "{\"error\":{\"message\":\"Gemini speech failed; check adapter settings and provider access\"}}"); }
             finally { speech.release(); }
         } catch (Exception ignored) {}
     }

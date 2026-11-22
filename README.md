@@ -16,7 +16,7 @@ license. The [original Visor README](README-VISOR.md) is also preserved.
 | Feature | Behavior |
 | --- | --- |
 | Natural conversations | Say “Hey Meta” once, then ask follow-ups with context. Tap the right touchpad to end the normal assistant conversation. |
-| Your ChatGPT account | The normal assistant can use an existing signed-in ChatGPT account. The tested configuration uses `gpt-6.1-sol` with low reasoning effort. |
+| Your ChatGPT account | Sign in to use your ChatGPT account for the normal assistant. Choose **Reasoning effort** next to **Model** to use OpenAI's default or set a level yourself. |
 | Cloud speech | A separate Android companion provides transcription and Finn speech synthesis. Recognition guidance covers English, French and Moroccan Darija. |
 | OpenAI Dots calls | “Hey Meta, open ChatGPT” hands off to an existing dot in the native ChatGPT app. Ask the dot to end the call and keep working. |
 | Call aliases | Call/open ChatGPT, Django, Dots and Jarvis, plus exact phrase variants. |
@@ -31,7 +31,7 @@ This is an experimental personal build. The tested setup is Ray-Ban Meta Skyler
 on firmware `126.0.0.207.412`, paired with a Samsung Android 17 phone. Compatibility
 with other glasses, firmware and Android versions needs separate testing.
 
-Current source versions: **Django 0.26**, **Glasses Speech 0.7**. The application IDs
+Current source versions: **Django 0.28**, **Glasses Speech 0.8**. The application IDs
 remain `org.marouane.djangoglasses` and `org.marouane.glassesspeech`; the upstream
 `com.macedonga.visor` code namespace is retained to keep the changes reviewable.
 The speech companion requires Android 13 or later. Existing Dots access in the
@@ -78,6 +78,11 @@ are separate from the synthetic checks.
 
 The glasses assistant calls itself **Django**. Its normal conversation and the
 existing OpenAI dot named Django are separate modes. See [USAGE.md](USAGE.md).
+
+In the assistant's voice settings, **Finn playback** offers Classic, Streaming
+and Flash-Lite for the local Glasses Speech companion. Classic is the default.
+The streaming modes play incoming Finn audio in the normal glasses conversation.
+They keep the selected answer and transcription models.
 
 For Dots calls, enable **Django dot call controls** in Android Accessibility settings.
 The service is restricted to ChatGPT's Call/End controls after an explicit request.

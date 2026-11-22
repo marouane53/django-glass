@@ -164,6 +164,10 @@ class Brain(
             Toolbox(emptyList(), "")
         }
         val turn = Turn(box, image, glasses?.described(), canEnd, capturePhoto, cameraAction, appTools.tools())
+        val modelNote = if (c.provider == Provider.CHATGPT) {
+            val effort = c.reasoningEffort.apiValue ?: "OpenAI's default"
+            " When asked about your model or effort, say this request uses ${c.answerModel} with $effort reasoning effort."
+        } else ""
         val system = (if (audience == Audience.PHONE) PHONE_PROMPT else SYSTEM_PROMPT) +
             " It is ${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH))}." +
             memoryPrompt() +
@@ -172,7 +176,8 @@ class Brain(
             turn.box.prompt +
             (if ((image != null || capturePhoto != null) && turn.box.tools.isNotEmpty()) PHOTO_PROMPT else "") +
             (if (note.isNotBlank()) " $note" else "") +
-            if (c.instructions.isNotBlank()) " " + c.instructions else ""
+            (if (c.instructions.isNotBlank()) " " + c.instructions else "") +
+            modelNote
         val recent = past.takeLast(MAX_EXCHANGES)
         val tokens = if (audience == Audience.PHONE) PHONE_TOKENS else GLASSES_TOKENS
         val search = c.webSearch && c.provider.search != null && !store.cannotSearch(c)
@@ -459,6 +464,7 @@ class Brain(
         }
         // The plan takes functions grouped in a namespace; should it refuse that, they go as a plain list.
         val plan = c.provider == Provider.CHATGPT
+        val effort = if (plan && turn != null) c.reasoningEffort else ReasoningEffort.LOW
         fun tools() = JSONArray().apply {
             if (search) put(JSONObject().put("type", "web_search"))
             if (functions.isEmpty()) return@apply
@@ -472,11 +478,11 @@ class Brain(
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
             val answer = try {
-                respond(c, body(), tokens)
+                respond(c, body(), tokens, effort)
             } catch (error: IllegalStateException) {
                 if (!plan || PLAN_FLAT in refused || functions.isEmpty() || !NAMESPACE_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
                 refused += PLAN_FLAT
-                respond(c, body(), tokens)
+                respond(c, body(), tokens, effort)
             }
             val items = answer.optJSONArray("output")?.objects().orEmpty()
             val text = items.filter { it.optString("type") == "message" }
@@ -503,11 +509,10 @@ class Brain(
     }
 
     /**
-     * One Responses API call, with a key or paid by the ChatGPT plan. A short think keeps a spoken answer quick, and
-     * its encrypted reasoning comes back for the next round; a model that does not reason refuses both, and is then
-     * asked without them.
+     * One Responses API call, with a key or paid by the ChatGPT plan. Encrypted reasoning lets later tool rounds
+     * carry the model's state forward, even when the request leaves effort at the provider default.
      */
-    private suspend fun respond(c: AssistantConfig, body: JSONObject, tokens: Int): JSONObject {
+    private suspend fun respond(c: AssistantConfig, body: JSONObject, tokens: Int, effort: ReasoningEffort): JSONObject {
         val plan = c.provider == Provider.CHATGPT
         val url = c.api.trimEnd('/') + "/responses"
         val key = (if (plan) "plan " else "$url ") + body.optString("model")
@@ -515,13 +520,12 @@ class Brain(
         if (!plan) body.put("max_output_tokens", tokens + THINKING_TOKENS)
         val call: suspend (JSONObject) -> JSONObject = if (plan) chatGpt::respond else { b -> post(url, bearerHeaders(c.apiKey), b) }
         if (plan) {
-            // Some account endpoints refuse encrypted reasoning. Keep explicit low effort when retrying,
-            // rather than silently falling back to the model's medium default.
+            // If the plan refuses encrypted reasoning, retry with the same effort setting.
             val encryptedKey = "$key encrypted"
-            val request = reasoned(JSONObject(body.toString()))
+            val request = reasoned(JSONObject(body.toString()), effort)
             if (encryptedKey in refused) request.remove("include")
             return try { call(request) } catch (error: IllegalStateException) {
-                if (encryptedKey in refused || !REASONING_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
+                if (encryptedKey in refused || !ENCRYPTED_REASONING_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
                 refused += encryptedKey
                 request.remove("include")
                 call(request)
@@ -529,7 +533,7 @@ class Brain(
         }
         if (key in refused) return call(body)
         return try {
-            call(reasoned(JSONObject(body.toString())))
+            call(reasoned(JSONObject(body.toString()), effort))
         } catch (error: IllegalStateException) {
             if (!REASONING_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
             refused += key
@@ -537,9 +541,10 @@ class Brain(
         }
     }
 
-    private fun reasoned(body: JSONObject) = body
-        .put("reasoning", JSONObject().put("effort", "low"))
-        .put("include", JSONArray().put("reasoning.encrypted_content"))
+    private fun reasoned(body: JSONObject, effort: ReasoningEffort) = body.apply {
+        effort.apiValue?.let { put("reasoning", JSONObject().put("effort", it)) }
+        put("include", JSONArray().put("reasoning.encrypted_content"))
+    }
 
     /** Responses API content: the text, and the glasses' photo when there is one. */
     private fun inputContent(text: String, image: ByteArray?): JSONArray = JSONArray()
@@ -721,6 +726,7 @@ class Brain(
         // A request the server turned down as written, not a key, a limit or an outage.
         val SEARCH_REFUSED = Regex("^the model answered (400|404|422):")
         val REASONING_REFUSED = Regex("reasoning|encrypted|include|thinking", RegexOption.IGNORE_CASE)
+        val ENCRYPTED_REASONING_REFUSED = Regex("encrypted|\\binclude\\b", RegexOption.IGNORE_CASE)
         val NAMESPACE_REFUSED = Regex("namespace", RegexOption.IGNORE_CASE)
         const val NAMESPACE = "visor"
         const val PLAN_FLAT = "plan flat tools"

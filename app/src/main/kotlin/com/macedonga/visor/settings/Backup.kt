@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.macedonga.visor.R
 import com.macedonga.visor.core.assistant.AssistantConfigStore
 import com.macedonga.visor.core.assistant.Provider
+import com.macedonga.visor.core.assistant.ReasoningEffort
 import com.macedonga.visor.core.assistant.TtsPath
 import com.macedonga.visor.core.assistant.mcp.AuthKind
 import com.macedonga.visor.core.assistant.mcp.McpServer
@@ -120,6 +121,7 @@ class Backups @Inject constructor(
                 "assistant",
                 JSONObject()
                     .put("enabled", a.enabled).put("provider", a.provider.name).put("model", a.model).put("linesModel", a.linesModel)
+                    .put("reasoningEffort", a.reasoningEffort.name)
                     .put("baseUrl", a.baseUrl).put("webSearch", a.webSearch).put("vision", a.vision).put("voicePhotos", a.voicePhotos).put("glassesVoice", a.tts == TtsPath.GLASSES).put("quietAfterActions", a.quietAfterActions).put("speechLanguage", a.speechLanguage)
                     .put("instructions", a.instructions).put("memoryMinutes", a.memoryMinutes)
                     .put("answerWaitSeconds", a.answerWaitSeconds)
@@ -183,11 +185,13 @@ class Backups @Inject constructor(
     /** Puts Visor's part back at once, and the glasses' part one write at a time; the glasses' part needs them connected. */
     private suspend fun restore(backup: JSONObject): Restored {
         backup.optJSONObject("assistant")?.let { o ->
+            val effort = o.optString("reasoningEffort")
             assistant.update {
                 it.copy(
                     enabled = o.optBoolean("enabled", it.enabled),
                     provider = runCatching { Provider.valueOf(o.getString("provider")) }.getOrDefault(it.provider),
                     model = o.optString("model", it.model),
+                    reasoningEffort = ReasoningEffort.entries.firstOrNull { level -> level.name == effort } ?: it.reasoningEffort,
                     linesModel = o.optString("linesModel", it.linesModel),
                     baseUrl = o.optString("baseUrl", it.baseUrl),
                     webSearch = o.optBoolean("webSearch", it.webSearch),

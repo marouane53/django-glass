@@ -8,7 +8,9 @@ service for client-supplied glasses audio.
 
 - TTS translates OpenAI-shaped `/audio/speech` requests into Google's Interactions
   API and returns WAV audio. The tested setup uses `gemini-3.8-flash-tts` and Finn
-  voice `en-us-finn`.
+  voice `en-us-finn`. The authenticated `/v1/audio/speech/stream` route in 0.8
+  also supports the same voice on Flash and Flash-Lite and returns 24 kHz mono
+  PCM incrementally. The original WAV route is still available.
 - Recognition accepts supplied 16 kHz mono PCM from Django. The tested provider
   is `gemini-3.5-flash-lite`. MAI-Transcribe-2 through OpenRouter remains selectable,
   with bounded retry and Gemini fallback on provider errors.

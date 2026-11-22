@@ -646,6 +646,15 @@
     <string name="ai_key_failed">Could not reach the provider: %1$s</string>
     <string name="ai_paste">Paste</string>
     <string name="ai_model">Model</string>
+    <string name="ai_reasoning_effort">Reasoning effort</string>
+    <string name="ai_reasoning_default">OpenAI default</string>
+    <string name="ai_reasoning_default_detail">Use the default effort for this model.</string>
+    <string name="ai_reasoning_time">Higher effort can take longer to answer.</string>
+    <string name="ai_reasoning_low">Low</string>
+    <string name="ai_reasoning_medium">Medium</string>
+    <string name="ai_reasoning_high">High</string>
+    <string name="ai_reasoning_xhigh">Extra high</string>
+    <string name="ai_reasoning_max">Maximum</string>
     <string name="ai_default_model">Default (%1$s)</string>
     <string name="ai_other_model">Enter a model ID…</string>
     <string name="ai_lines_model">Day summary model</string>

@@ -54,10 +54,12 @@ import com.macedonga.visor.core.assistant.AssistantConfigStore
 import com.macedonga.visor.core.assistant.AssistantPhase
 import com.macedonga.visor.core.assistant.CHATGPT_USAGE
 import com.macedonga.visor.core.assistant.ChatGptPlan
+import com.macedonga.visor.core.assistant.FinnPlayback
 import com.macedonga.visor.core.assistant.ModelInfo
 import com.macedonga.visor.core.assistant.ModelRefused
 import com.macedonga.visor.core.assistant.ModelsError
 import com.macedonga.visor.core.assistant.Provider
+import com.macedonga.visor.core.assistant.ReasoningEffort
 import com.macedonga.visor.core.assistant.Refusal
 import com.macedonga.visor.core.assistant.SPEECH_LANGUAGES
 import com.macedonga.visor.core.assistant.TtsPath
@@ -255,6 +257,13 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                             onClick = { sheet = "model" },
                         )
                     },
+                    if (plan) row {
+                        ValueRow(
+                            stringResource(R.string.ai_reasoning_effort),
+                            reasoningLabel(config.reasoningEffort),
+                            onClick = { sheet = "reasoning" },
+                        )
+                    } else null,
                     {
                         ValueRow(
                             stringResource(R.string.ai_lines_model),
@@ -345,6 +354,11 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                             onClick = { sheet = "tts_voice" },
                         )
                     } else null,
+                    if (config.usesFinnBridge) row {
+                        PillsRow("Finn playback", FinnPlayback.entries.map { it to it.label }, config.finnPlayback,
+                            onPick = { mode -> model.store.update { it.copy(finnPlayback = mode) } },
+                            sub = "Streaming starts speaking while Finn generates the rest. Flash-Lite uses the same voice on a faster speech model.")
+                    } else null,
                     if (config.tts == TtsPath.CLOUD) row {
                         // A sample sentence on the phone's speaker: no model and no glasses.
                         val sample = stringResource(R.string.ai_tts_sample)
@@ -428,6 +442,17 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
             config.provider,
             onPick = model.store::switchProvider,
             onDismiss = { sheet = null },
+        )
+        "reasoning" -> ChoiceSheet(
+            title = stringResource(R.string.ai_reasoning_effort),
+            options = ReasoningEffort.entries.map { effort ->
+                val detail = if (effort == ReasoningEffort.DEFAULT) stringResource(R.string.ai_reasoning_default_detail) else null
+                Triple(effort, reasoningLabel(effort), detail)
+            },
+            selected = config.reasoningEffort,
+            onPick = { effort -> model.store.update { it.copy(reasoningEffort = effort) } },
+            onDismiss = { sheet = null },
+            sub = stringResource(R.string.ai_reasoning_time),
         )
         "key" -> TextSheet(
             providerName(config.provider) + " · " + stringResource(R.string.ai_key), config.apiKey,
@@ -523,6 +548,18 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
         }
     }
 }
+
+@Composable
+private fun reasoningLabel(effort: ReasoningEffort): String = stringResource(
+    when (effort) {
+        ReasoningEffort.DEFAULT -> R.string.ai_reasoning_default
+        ReasoningEffort.LOW -> R.string.ai_reasoning_low
+        ReasoningEffort.MEDIUM -> R.string.ai_reasoning_medium
+        ReasoningEffort.HIGH -> R.string.ai_reasoning_high
+        ReasoningEffort.XHIGH -> R.string.ai_reasoning_xhigh
+        ReasoningEffort.MAX -> R.string.ai_reasoning_max
+    },
+)
 
 @Composable
 private fun keyWords(check: KeyCheck): Pair<String?, String?> = when (check) {

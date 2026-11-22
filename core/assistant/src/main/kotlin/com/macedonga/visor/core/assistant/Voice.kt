@@ -20,6 +20,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -55,6 +59,15 @@ class Voice(private val context: Context) {
     /** Audio synthesised elsewhere, such as by a cloud voice, as the same packets. */
     suspend fun encode(pcm: SpeechPcm): List<OpusPacket> =
         withContext(Dispatchers.Default) { encodeOpus(resample(pcm.samples, pcm.rate, 48_000)) }
+
+    /** Keep one encoder open across all of Finn's network chunks so only the last chunk ends the audio. */
+    internal fun encodeFinn(pcm: Flow<ByteArray>): Flow<OpusPacket> = flow {
+        val resample = FinnResampler()
+        OpusEncoder().use { codec ->
+            pcm.collect { codec.pump(resample.push(it), end = false) { emit(it) } }
+            codec.pump(resample.finish(), end = true) { emit(it) }
+        }
+    }.flowOn(Dispatchers.Default).buffer(16)
 
     private suspend fun synthesize(text: String, locale: Locale, out: File) {
         val engine = ready()
@@ -131,68 +144,113 @@ class Voice(private val context: Context) {
         return out
     }
 
-    /** The platform Opus encoder, one packet per output buffer, codec config left out. */
     private suspend fun encodeOpus(pcm: ShortArray): List<OpusPacket> {
-        val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, 48_000, 1).apply {
-            setInteger(MediaFormat.KEY_BIT_RATE, 32_000)
-        }
-        val codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_OPUS)
+        val raw = ByteBuffer.allocate(pcm.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+        pcm.forEach { raw.putShort(it) }
         val packets = ArrayList<OpusPacket>()
+        OpusEncoder().use { it.pump(raw.array(), end = true) { packet -> packets.add(packet) } }
+        return packets
+    }
+}
+
+/** The platform Opus encoder, one packet per output buffer, codec config left out. */
+private class OpusEncoder : AutoCloseable {
+    private val codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_OPUS)
+    private val info = MediaCodec.BufferInfo()
+    private var totalBytes = 0L
+
+    init {
         try {
+            val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, 48_000, 1).apply {
+                setInteger(MediaFormat.KEY_BIT_RATE, 32_000)
+            }
             codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
             codec.start()
-            val bytes = ByteBuffer.allocate(pcm.size * 2).order(ByteOrder.LITTLE_ENDIAN)
-            pcm.forEach { bytes.putShort(it) }
-            val raw = bytes.array()
-            var fed = 0
-            var inputDone = false
-            var outputDone = false
-            val info = MediaCodec.BufferInfo()
-            while (!outputDone) {
-                currentCoroutineContext().ensureActive()
-                // Keep the input slots full, then drain every ready packet. Waiting for output
-                // after each input buffer stalls even when the encoder can accept more audio.
-                var queued = false
-                while (!inputDone) {
-                    val index = codec.dequeueInputBuffer(0)
-                    if (index < 0) break
-                    val buffer = checkNotNull(codec.getInputBuffer(index))
-                    val take = minOf(buffer.capacity(), raw.size - fed) and 1.inv()
-                    val pts = fed / 2 * 1_000_000L / 48_000
-                    if (take <= 0) {
-                        codec.queueInputBuffer(index, 0, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                        inputDone = true
-                    } else {
-                        buffer.clear()
-                        buffer.put(raw, fed, take)
-                        codec.queueInputBuffer(index, 0, take, pts, 0)
-                        fed += take
-                    }
-                    queued = true
-                }
-                // If neither side is ready, wait briefly so we don't spin or starve the input.
-                var waitUs = if (queued) 0L else 2_000L
-                while (!outputDone) {
-                    val out = codec.dequeueOutputBuffer(info, waitUs)
-                    waitUs = 0
-                    if (out == MediaCodec.INFO_TRY_AGAIN_LATER) break
-                    if (out < 0) continue // Format or output buffers changed.
-                    val buffer = checkNotNull(codec.getOutputBuffer(out))
-                    if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0 && info.size > 0) {
-                        val data = ByteArray(info.size)
-                        buffer.position(info.offset)
-                        buffer.get(data)
-                        packets += OpusPacket(data, opusDurationUs(data))
-                    }
-                    codec.releaseOutputBuffer(out, false)
-                    outputDone = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
-                }
-            }
-        } finally {
-            runCatching { codec.stop() }
+        } catch (error: Exception) {
             codec.release()
+            throw error
         }
-        return packets
+    }
+
+    suspend fun pump(raw: ByteArray, end: Boolean, emit: suspend (OpusPacket) -> Unit) {
+        if (raw.isEmpty() && !end) return
+        var fed = 0
+        var inputDone = false
+        do {
+            currentCoroutineContext().ensureActive()
+            var queued = false
+            while (fed < raw.size || end && !inputDone) {
+                val index = codec.dequeueInputBuffer(0)
+                if (index < 0) break
+                val buffer = checkNotNull(codec.getInputBuffer(index))
+                val take = minOf(buffer.capacity(), raw.size - fed) and 1.inv()
+                val pts = totalBytes / 2 * 1_000_000L / 48_000
+                if (take <= 0) {
+                    codec.queueInputBuffer(index, 0, 0, pts, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                    inputDone = true
+                } else {
+                    buffer.clear()
+                    buffer.put(raw, fed, take)
+                    codec.queueInputBuffer(index, 0, take, pts, 0)
+                    fed += take
+                    totalBytes += take
+                }
+                queued = true
+            }
+            // Fill every input slot before waiting. Give a finished chunk a short chance to produce
+            // output, so its packets can play even when the next chunk hasn't arrived from Finn.
+            var waitUs = if (queued && (end || fed < raw.size)) 0L else 2_000L
+            while (true) {
+                val out = codec.dequeueOutputBuffer(info, waitUs)
+                waitUs = 0
+                if (out == MediaCodec.INFO_TRY_AGAIN_LATER) break
+                if (out < 0) continue
+                val buffer = checkNotNull(codec.getOutputBuffer(out))
+                val packet = if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0 && info.size > 0) {
+                    buffer.position(info.offset)
+                    val data = ByteArray(info.size).also { buffer.get(it) }
+                    OpusPacket(data, opusDurationUs(data))
+                } else null
+                val done = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+                codec.releaseOutputBuffer(out, false)
+                if (packet != null) emit(packet)
+                if (done) return
+            }
+        } while (fed < raw.size || end)
+    }
+
+    override fun close() {
+        runCatching { codec.stop() }
+        codec.release()
+    }
+}
+
+/** Double 24 kHz mono PCM to 48 kHz without introducing a discontinuity at an HTTP read boundary. */
+internal class FinnResampler {
+    private var low = -1
+    private var previous: Int? = null
+
+    fun push(bytes: ByteArray): ByteArray {
+        val samples = (bytes.size + if (low < 0) 0 else 1) / 2
+        val out = ByteBuffer.allocate(samples * 4).order(ByteOrder.LITTLE_ENDIAN)
+        for (b in bytes) {
+            val value = b.toInt() and 255
+            if (low < 0) {
+                low = value
+            } else {
+                val next = (low or (value shl 8)).toShort().toInt()
+                previous?.let { out.putShort(((it + next) / 2).toShort()) }
+                out.putShort(next.toShort())
+                previous = next
+                low = -1
+            }
+        }
+        return out.array().copyOf(out.position())
+    }
+
+    fun finish(): ByteArray {
+        check(low < 0 && previous != null) { "Incomplete Finn PCM" }
+        return ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(checkNotNull(previous).toShort()).array()
     }
 }
 

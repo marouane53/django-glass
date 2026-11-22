@@ -13,6 +13,7 @@ data class AssistantConfig(
     val provider: Provider = Provider.CHATGPT,
     val apiKey: String = "",
     val model: String = "gpt-6.1-sol",
+    val reasoningEffort: ReasoningEffort = ReasoningEffort.DEFAULT,
     // The model that writes each day's lines in the diary; empty, the answers' model.
     val linesModel: String = "",
     val baseUrl: String = "https://api.openai.com/v1",
@@ -28,6 +29,7 @@ data class AssistantConfig(
     val ttsApiKey: String = "",
     val ttsModel: String = "gemini-3.8-flash-tts",
     val ttsVoice: String = "en-us-finn",
+    val finnPlayback: FinnPlayback = FinnPlayback.WAV,
     // No spoken answer when every tool the model used did what was asked, such as music that now plays.
     val quietAfterActions: Boolean = false,
     // The language the wearer speaks, as a BCP 47 tag, when the glasses have no pack for it; empty, the glasses' own.
@@ -53,10 +55,23 @@ data class AssistantConfig(
 
     /** The model asked: the one chosen, or the provider's own default. */
     val answerModel: String get() = model.ifBlank { provider.defaultModel }
+
+    val usesFinnBridge: Boolean get() = tts == TtsPath.CLOUD &&
+        ttsBaseUrl.trim().trimEnd('/') == "http://127.0.0.1:8766/v1" &&
+        ttsModel == "gemini-3.8-flash-tts" && (ttsVoice == "en-us-finn" || ttsVoice.equals("Finn", ignoreCase = true))
 }
 
 /** Who says the answer out loud. */
 enum class TtsPath { GLASSES, PHONE, CLOUD }
+
+/** The request may omit effort to use OpenAI's default for the selected model. */
+enum class ReasoningEffort(val apiValue: String?) {
+    DEFAULT(null), LOW("low"), MEDIUM("medium"), HIGH("high"), XHIGH("xhigh"), MAX("max"),
+}
+
+enum class FinnPlayback(val label: String) {
+    WAV("Classic"), STREAM("Streaming"), LITE("Flash-Lite"),
+}
 
 /** Languages the wearer can speak that the glasses have no pack for, heard and spoken by the phone. */
 val SPEECH_LANGUAGES = listOf(
@@ -136,7 +151,9 @@ class AssistantConfigStore(context: Context) {
 
     fun update(change: (AssistantConfig) -> AssistantConfig) {
         val before = _config.value
-        val next = change(before)
+        val changed = change(before)
+        val instructions = changed.instructions.replace(LEGACY_DJANGO_MODEL_INSTRUCTION, "")
+        val next = if (instructions == changed.instructions) changed else changed.copy(instructions = instructions)
         // Turned on again, search is tried again with every model.
         if (next.webSearch && !before.webSearch && _noSearch.value.isNotEmpty()) setNoSearch(emptySet())
         // What a server took holds for the address and models it was found with.
@@ -148,6 +165,7 @@ class AssistantConfigStore(context: Context) {
             .putString("provider", next.provider.name)
             .putString("api_key", next.apiKey)
             .putString("model", next.model)
+            .putString("reasoning_effort", next.reasoningEffort.name)
             .putString("lines_model", next.linesModel)
             .putString("base_url", next.baseUrl)
             .putBoolean("web_search", next.webSearch)
@@ -158,6 +176,7 @@ class AssistantConfigStore(context: Context) {
             .putString("tts_api_key", next.ttsApiKey)
             .putString("tts_model", next.ttsModel)
             .putString("tts_voice", next.ttsVoice)
+            .putString("finn_playback", next.finnPlayback.name)
             .putBoolean("quiet_after_actions", next.quietAfterActions)
             .putString("speech_language", next.speechLanguage)
             .putString("instructions", next.instructions)
@@ -172,12 +191,14 @@ class AssistantConfigStore(context: Context) {
         val d = AssistantConfig()
         val baseUrl = prefs.getString("base_url", d.baseUrl).orEmpty()
         val provider = runCatching { Provider.valueOf(prefs.getString("provider", null).orEmpty()) }.getOrDefault(d.provider)
+        val effort = prefs.getString("reasoning_effort", null)
         return AssistantConfig(
             enabled = prefs.getBoolean("enabled", d.enabled),
             // A known service's address typed in by hand is that service's preset.
             provider = if (provider == Provider.OPENAI_COMPATIBLE) Provider.at(baseUrl) ?: provider else provider,
             apiKey = prefs.getString("api_key", d.apiKey).orEmpty(),
             model = prefs.getString("model", d.model).orEmpty(),
+            reasoningEffort = ReasoningEffort.entries.firstOrNull { it.name == effort } ?: d.reasoningEffort,
             linesModel = prefs.getString("lines_model", d.linesModel).orEmpty(),
             baseUrl = baseUrl,
             webSearch = prefs.getBoolean("web_search", d.webSearch),
@@ -190,9 +211,10 @@ class AssistantConfigStore(context: Context) {
             ttsApiKey = prefs.getString("tts_api_key", d.ttsApiKey).orEmpty(),
             ttsModel = prefs.getString("tts_model", d.ttsModel).orEmpty(),
             ttsVoice = prefs.getString("tts_voice", d.ttsVoice).orEmpty(),
+            finnPlayback = FinnPlayback.entries.firstOrNull { it.name == prefs.getString("finn_playback", null) } ?: d.finnPlayback,
             quietAfterActions = prefs.getBoolean("quiet_after_actions", d.quietAfterActions),
             speechLanguage = prefs.getString("speech_language", d.speechLanguage).orEmpty(),
-            instructions = prefs.getString("instructions", d.instructions).orEmpty(),
+            instructions = prefs.getString("instructions", d.instructions).orEmpty().replace(LEGACY_DJANGO_MODEL_INSTRUCTION, ""),
             memoryMinutes = prefs.getInt("memory_minutes", d.memoryMinutes),
             answerWaitSeconds = prefs.getInt("answer_wait_s", d.answerWaitSeconds),
             chatGpt = prefs.getString("chatgpt", d.chatGpt).orEmpty(),

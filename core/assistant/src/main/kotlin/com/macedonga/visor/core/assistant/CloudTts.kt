@@ -4,14 +4,23 @@ import android.util.Base64
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /** Why a cloud speech service gave no audio, in its own words where it gave any. */
 class SpeechError(message: String) : Exception(message)
@@ -24,6 +33,38 @@ private class NotHere : Exception()
 private enum class SpeechShape { AUDIO_SPEECH, CHAT_AUDIO }
 
 private val shapes = ConcurrentHashMap<String, SpeechShape>()
+
+private val finnClient = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
+    .connectTimeout(3, TimeUnit.SECONDS).readTimeout(17, TimeUnit.SECONDS).build()
+
+/** Raw 24 kHz PCM from the paired app. Closing the consumer cancels its HTTP read. */
+internal fun finnPcm(config: AssistantConfig, text: String): Flow<ByteArray> = channelFlow {
+    check(config.usesFinnBridge && config.finnPlayback != FinnPlayback.WAV)
+    val model = if (config.finnPlayback == FinnPlayback.LITE) "gemini-3.8-flash-lite-tts" else config.ttsModel
+    val payload = JSONObject().put("model", model).put("input", text).put("voice", config.ttsVoice)
+    val call = finnClient.newCall(Request.Builder().url("http://127.0.0.1:8766/v1/audio/speech/stream")
+        .header("Authorization", "Bearer ${config.ttsApiKey.trim()}")
+        .post(payload.toString().toRequestBody("application/json".toMediaType())).build())
+    val reader = launch(Dispatchers.IO) {
+        try {
+            call.execute().use { response ->
+                if (!response.isSuccessful) throw SpeechError("Finn stream HTTP ${response.code}")
+                if (response.header("Content-Type")?.substringBefore(';') != "audio/l16") throw SpeechError("Expected raw Finn audio")
+                val input = response.body.byteStream()
+                val buffer = ByteArray(4096)
+                while (true) {
+                    val size = input.read(buffer)
+                    if (size < 0) break
+                    if (size > 0) send(buffer.copyOf(size))
+                }
+            }
+            channel.close()
+        } catch (error: Exception) {
+            channel.close(error)
+        }
+    }
+    awaitClose { call.cancel(); reader.cancel() }
+}
 
 /** [text] spoken by the cloud speech service. The first call to an address finds out which shape it answers. */
 suspend fun cloudSpeech(config: AssistantConfig, text: String): SpeechPcm = withContext(Dispatchers.IO) {

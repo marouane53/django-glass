@@ -42,6 +42,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
@@ -50,13 +51,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
@@ -1851,14 +1855,69 @@ class Assistant(
             speakOnGlasses(l, interaction, transcript, text, listen)
             return 0
         }
-        val packets = synthesise(text, spoken(l))
         // A session turn ends on the VARM; there, and in Live AI, ev60 would end the whole session. A typed one ends on its card.
         val card = if (written && display() && text.isNotEmpty()) answerCard(text) else null
-        stream(
-            l, interaction, transcript, text, packets,
-            complete = written || (!l.sessionTurn && !live && !partner), listen = listen, card = card,
-        )
-        return packets.sumOf { it.durationUs } / 1000
+        val complete = written || (!l.sessionTurn && !live && !partner)
+        if (partner && !live && !written && c.usesFinnBridge && c.finnPlayback != FinnPlayback.WAV && text.isNotBlank()) {
+            val sent = playFinn(c, text) { packets ->
+                stream(l, interaction, transcript, text, packets, complete, listen, card)
+            }
+            if (sent != null) return sent
+        }
+        return stream(l, interaction, transcript, text, synthesise(text, spoken(l)).asFlow(), complete, listen, card)
+    }
+
+    /** A short prebuffer protects startup. Until the stream opens, a failure can still use the WAV path. */
+    private suspend fun playFinn(c: AssistantConfig, text: String, play: suspend (Flow<OpusPacket>) -> Long): Long? = supervisorScope {
+        val started = android.os.SystemClock.elapsedRealtime()
+        val queue = Channel<OpusPacket>(24)
+        val producer = launch {
+            try {
+                voice.encodeFinn(finnPcm(c, text)).collect { queue.send(it) }
+                queue.close()
+            } catch (error: Exception) {
+                queue.close(error)
+            }
+        }
+        try {
+            val buffered = mutableListOf<OpusPacket>()
+            val ready = try {
+                withTimeoutOrNull(CLOUD_SPEECH_WAIT_MS) {
+                    var bufferedUs = 0L
+                    while (bufferedUs < 200_000L) {
+                        val packet = queue.receiveCatching().let { it.exceptionOrNull()?.let { error -> throw error }; it.getOrNull() } ?: break
+                        buffered += packet
+                        bufferedUs += packet.durationUs
+                    }
+                    buffered.isNotEmpty()
+                } ?: false
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
+                false
+            }
+            if (!ready) {
+                say("Finn stream unavailable before playback; trying the classic speech path")
+                android.util.Log.i("DjangoTiming", "finn_mode=${c.finnPlayback.name} fallback=true")
+                return@supervisorScope null
+            }
+            android.util.Log.i("DjangoTiming", "finn_mode=${c.finnPlayback.name} audio_ready_ms=${android.os.SystemClock.elapsedRealtime() - started}")
+            var partial = false
+            val sent = play(flow {
+                buffered.forEach { emit(it) }
+                while (true) {
+                    val received = queue.receiveCatching()
+                    received.exceptionOrNull()?.let { if (it is CancellationException) throw it; partial = true }
+                    val packet = received.getOrNull() ?: break
+                    emit(packet)
+                }
+            })
+            if (partial) throw SpeechError("Finn stream ended before the full reply played")
+            sent
+        } finally {
+            producer.cancel()
+            queue.cancel()
+        }
     }
 
     /** The answer as audio: the cloud voice when chosen, and the phone's engine when it fails, never silence. */
@@ -1931,9 +1990,9 @@ class Assistant(
 
     /** Stream phone speech; partner turns with simplified forwarding send the VARM before audio. */
     private suspend fun stream(
-        l: Link, interaction: String, transcript: String, text: String, packets: List<OpusPacket>, complete: Boolean, listen: Boolean,
+        l: Link, interaction: String, transcript: String, text: String, packets: Flow<OpusPacket>, complete: Boolean, listen: Boolean,
         card: String? = null,
-    ) {
+    ): Long {
         val mux = l.mux
         val m0 = checkNotNull(l.m0)
         val s0 = checkNotNull(l.s0)
@@ -1956,14 +2015,17 @@ class Assistant(
         mux.send(s0, header, messageType = MT_STREAM_HEADER)
 
         setPhase(l, AssistantPhase.SPEAKING)
-        val start = System.nanoTime()
+        var start = System.nanoTime()
         var dueUs = 0L
-        for ((i, chunk) in packets.chunked(2).withIndex()) {
+        val chunk = ArrayList<OpusPacket>(2)
+        suspend fun sendChunk() {
             check(interaction !in l.partnerTurns || (link === l && l.partnerCanAnswer(interaction))) { "The glasses closed this 3p turn during playback" }
             val frame = chunk.fold(ByteArray(0)) { acc, p ->
                 acc + ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(p.data.size).array() + p.data
             }
-            if (i == 0) {
+            val now = System.nanoTime()
+            if (dueUs == 0L || (now - start) / 1000 - dueUs > 80_000) start = now - dueUs * 1000
+            if (dueUs == 0L) {
                 mux.send(s0, frame, messageType = MT_STREAM_AUDIO)
                 if (l.simplified && !answerBeforeAudio) sendNetEvent(l, m0, answer)
             } else {
@@ -1971,9 +2033,15 @@ class Assistant(
                 mux.send(s0, frame)
             }
             dueUs += chunk.sumOf { it.durationUs }
+            chunk.clear()
             val wait = dueUs / 1000 - (System.nanoTime() - start) / 1_000_000
             if (wait > 0) delay(wait)
         }
+        packets.collect { packet ->
+            chunk.add(packet)
+            if (chunk.size == 2) sendChunk()
+        }
+        if (chunk.isNotEmpty()) sendChunk()
         mux.send(s0, ByteArray(0), messageType = MT_STREAM_END)
         if (!l.simplified) sendNetEvent(l, m0, answer)
         // Without it the glasses stay in their answering state with the mic on, and never offer a follow-up.
@@ -1985,6 +2053,7 @@ class Assistant(
             delay(20)
         }
         say("Answered: \"$text\"")
+        return dueUs / 1000
     }
 
     /**
