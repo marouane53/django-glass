@@ -213,7 +213,7 @@ class PhoneMessages @Inject constructor(
         val error = when {
             viaApp -> replies.reply(context, thread, text)
             text.isBlank() -> "Empty message"
-            !context.allows(Manifest.permission.SEND_SMS) -> "SMS not allowed in Visor"
+            !context.allows(Manifest.permission.SEND_SMS) -> "SMS not allowed in Django"
             to.isEmpty() -> "No recipient"
             to.size > 1 -> "Group texts are not supported"
             else -> deliver(to.single(), text)
@@ -235,7 +235,7 @@ class PhoneMessages @Inject constructor(
         val id = requests.start("${if (viaApp) "messages" else "sms"}://send/$number", RequestSource.SMS)
         val error = when {
             viaApp -> replies.reply(context, thread, text)
-            !context.allows(Manifest.permission.SEND_SMS) -> "SMS not allowed in Visor"
+            !context.allows(Manifest.permission.SEND_SMS) -> "SMS not allowed in Django"
             else -> deliver(number, text)
         }
         requests.finish(id, error ?: "sent", failed = error != null, bytes = text.encodeToByteArray().size.toLong())
@@ -274,7 +274,7 @@ class PhoneMessages @Inject constructor(
 
     /**
      * "" when every part went, else why not: the radio's word on each part, or the SMS store's record of the text as
-     * sent or failed. On an Android 16 emulator the radio's word never reached Visor although the text went.
+     * sent or failed. On an Android 16 emulator the radio's word never reached Django although the text went.
      */
     private suspend fun outcome(results: Channel<Int>, parts: Int, text: String, since: Long): String {
         val codes = ArrayList<Int>()
@@ -337,7 +337,7 @@ class PhoneMessages @Inject constructor(
         return canonical
     }
 
-    /** For the debug receiver: the newest rows of the thread list as Visor reads them, ids and counts only. */
+    /** For the debug receiver: the newest rows of the thread list as Django reads them, ids and counts only. */
     fun describeThreads(count: Int): String {
         val canonical = canonical()
         fun rows(uri: Uri) = context.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use { it.count } ?: -1

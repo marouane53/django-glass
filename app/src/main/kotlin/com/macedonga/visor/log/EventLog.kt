@@ -54,7 +54,7 @@ class EventLog @Inject constructor(@ApplicationContext context: Context) {
 
     fun add(text: String) {
         // Debug builds mirror the log to logcat, so a run can be followed over adb.
-        if (BuildConfig.DEBUG) Log.i("Visor", text)
+        if (BuildConfig.DEBUG) Log.i("Django", text)
         val line = LocalTime.now().format(TIME) + "  " + text
         _lines.update { (it + line).takeLast(LIMIT) }
         file?.let { synchronized(it) { runCatching { it.appendText("${LocalDate.now()} $line\n") } } }
@@ -111,9 +111,9 @@ class LogFeed @Inject constructor(
                 // svc15 logs itself; the tunnel, the fetcher and screencast chunks are too many to list.
                 if (data.serviceId in QUIET) return@collect
                 add("Message from service ${data.serviceId}, type ${data.messageType}, ${data.payload.size} bytes")
-                // Debug builds also print the bytes, so a service Visor does not answer can be read over adb.
+                // Debug builds also print the bytes, so a service Django does not answer can be read over adb.
                 if (BuildConfig.DEBUG) {
-                    Log.i("VisorSvc", "svc ${data.serviceId} type ${data.messageType} " + data.payload.toHexString(0, minOf(400, data.payload.size)))
+                    Log.i("DjangoSvc", "svc ${data.serviceId} type ${data.messageType} " + data.payload.toHexString(0, minOf(400, data.payload.size)))
                 }
             }
         }

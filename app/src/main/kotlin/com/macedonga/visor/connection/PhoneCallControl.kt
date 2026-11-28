@@ -96,7 +96,7 @@ class PhoneCallControl @Inject constructor(
     /** Telecom takes the call; the call itself rides HFP to the glasses. */
     @SuppressLint("MissingPermission") // checked with allows(), and a refusal is caught
     private fun placeCall(number: String): Pair<Long, String?> {
-        if (!context.allows(Manifest.permission.CALL_PHONE)) return ERROR_PERMISSION to "Call permission is not allowed in Visor"
+        if (!context.allows(Manifest.permission.CALL_PHONE)) return ERROR_PERMISSION to "Call permission is not allowed in Django"
         if (number.isBlank()) return RESULT_UNKNOWN to "No number to call"
         return try {
             val telecom = requireNotNull(context.getSystemService(TelecomManager::class.java))
@@ -126,8 +126,8 @@ class PhoneCallControl @Inject constructor(
 
     /** Android has no call API for WhatsApp, so this opens the contact's WhatsApp call row, which starts the call. */
     private fun startWhatsApp(number: String): Pair<Long, String?> {
-        if (!context.allows(Manifest.permission.READ_CONTACTS)) return ERROR_PERMISSION to "Contacts permission is not allowed in Visor"
-        if (!mayOpenApps(context)) return RESULT_UNKNOWN to "Visor cannot open WhatsApp from the background"
+        if (!context.allows(Manifest.permission.READ_CONTACTS)) return ERROR_PERMISSION to "Contacts permission is not allowed in Django"
+        if (!mayOpenApps(context)) return RESULT_UNKNOWN to "Django cannot open WhatsApp from the background"
         val row = whatsAppRow(number) ?: return RESULT_UNKNOWN to "No WhatsApp call for this number"
         val intent = Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, row)).setPackage(WHATSAPP_PACKAGE)
         return try {
@@ -162,7 +162,7 @@ class PhoneCallControl @Inject constructor(
         val error = when {
             provider != GlassesNotification.PROVIDER_NATIVE -> "Answering on this provider is not supported"
             !context.allows(Manifest.permission.ANSWER_PHONE_CALLS) || !context.allows(Manifest.permission.READ_PHONE_STATE) ->
-                "Call permission is not allowed in Visor"
+                "Call permission is not allowed in Django"
             !ringing() -> "No ringing call"
             else -> try {
                 requireNotNull(context.getSystemService(TelecomManager::class.java)).acceptRingingCall()

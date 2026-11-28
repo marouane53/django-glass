@@ -1,6 +1,6 @@
 # Accessibility
 
-Visor should work for everyone who wears Meta glasses, including people who use a screen reader, large text, or the glasses themselves as an accessibility aid. This file says what Visor aims for, what does not work yet, and how to report a problem.
+Django should work for everyone who wears Meta glasses, including people who use a screen reader, large text, or the glasses themselves as an accessibility aid. This file says what Django aims for, what does not work yet, and how to report a problem.
 
 ## Goals
 
@@ -30,13 +30,13 @@ Visor should work for everyone who wears Meta glasses, including people who use 
 
 - The changes above come from the code. A full pass with TalkBack on a phone has not been done yet.
 - With "Remove animations" on, the pairing steps in setup still move: the animation shows where the button and the light are on the glasses. The same steps are written next to it.
-- Setup shows Meta's login screens, which Visor draws from Meta's own layout. They have not been tried with TalkBack.
+- Setup shows Meta's login screens, which Django draws from Meta's own layout. They have not been tried with TalkBack.
 - There is only a dark theme, and no high-contrast option.
 
 ## Supported environments
 
 - Android 12 or later, on a phone.
-- TalkBack, the phone's font size and its display size. Visor follows all three.
+- TalkBack, the phone's font size and its display size. Django follows all three.
 - Not tried: Switch Access, Voice Access, Select to Speak, external keyboards and braille displays. Reports about them are welcome.
 
 ## Contributor requirements
@@ -53,6 +53,8 @@ The pull request template has a line for this.
 
 ## Reporting a problem
 
-Open an issue with the [accessibility form](https://github.com/macedonga/visor/issues/new?template=accessibility.yml). Say what you tried to do, what stopped you, and which assistive technology and settings you use. For a question, ask in [Discussions](https://github.com/macedonga/visor/discussions/categories/q-a).
+Describe what you tried, what stopped you, and which assistive technology and settings you use. [Report an accessibility problem](https://github.com/marouane53/django-glass/issues/new?template=accessibility.yml).
+
+For questions, use the [Django discussions](https://github.com/marouane53/django-glass/discussions).
 
 Every report gets an answer. A problem that stops someone from doing a task comes before everything else. If something cannot be fixed, the answer says why, and gives a way around it when there is one.

@@ -295,7 +295,7 @@ class BandLink @Inject constructor(
         pairing.value = false
     }
 
-    /** A svc41109 message on the band's own channel, which Visor opens; false when the band is not up. */
+    /** A svc41109 message on the band's own channel, which Django opens; false when the band is not up. */
     fun sendPeer(type: Int, payload: ByteArray): Boolean {
         val running = session ?: return false
         if (_state.value.link != LinkState.READY) return false
@@ -380,8 +380,8 @@ class BandLink @Inject constructor(
      */
     suspend fun installManifest(authority: ByteArray, manifest: ByteArray): ManifestInstall = holdFor { install(authority, manifest, salt = null) }
 
-    // As the Meta app does on every band connection: a band holding another manifest than Visor's for its glasses gets
-    // Visor's. The band stays here until it is done: half a manifest would leave it with none.
+    // As the Meta app does on every band connection: a band holding another manifest than Django's for its glasses gets
+    // Django's. The band stays here until it is done: half a manifest would leave it with none.
     private suspend fun syncManifest(glasses: String) {
         val pair = toolkit.pair(glasses) ?: return
         val manifest = pair.manifest ?: return
@@ -405,13 +405,13 @@ class BandLink @Inject constructor(
                 null -> continue
                 is ManifestAnswer.Refused -> {
                     if (before.error == UNKNOWN_TYPE) continue
-                    log.add("Band: no manifest on svc$service (0x%04x); installing Visor's".format(before.error))
+                    log.add("Band: no manifest on svc$service (0x%04x); installing Django's".format(before.error))
                     // The Meta app installs on another channel than the one it asked on.
                     forgetChannel(before.channel)
                 }
                 is ManifestAnswer.Held -> {
                     if (salt != null && before.version.salt.contentEquals(salt)) return ManifestInstall.Held(before.version.version)
-                    log.add("Band: manifest ${before.version.version} on svc$service; installing Visor's")
+                    log.add("Band: manifest ${before.version.version} on svc$service; installing Django's")
                 }
             }
             sendOn(service, ConstellationManifest.SET_AUTHORITY_KEY, ConstellationManifest.authorityKey(authority))

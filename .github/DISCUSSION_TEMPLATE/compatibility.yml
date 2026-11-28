@@ -2,7 +2,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Tell others how Visor works on your pair. One report per pair and firmware.
+        Tell others how Django works on your pair. One report per pair and firmware.
         Remove serial numbers, Bluetooth addresses, tokens and API keys from everything you paste.
   - type: input
     id: glasses
@@ -14,7 +14,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Visor version
+      label: Django version
       description: Settings, About.
     validations:
       required: true

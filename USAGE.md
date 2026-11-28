@@ -1,4 +1,4 @@
-# Using Django Glass
+# Using Django
 
 ## Normal assistant
 

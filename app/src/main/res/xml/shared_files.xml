@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- What Visor hands to other apps when sharing: the photos Meta AI answered with, and the event log. -->
+<!-- The photos Django used in answers and the event log can be shared with other apps. -->
 <paths>
     <files-path name="assistant" path="assistant/photos/" />
     <cache-path name="log" path="log/" />

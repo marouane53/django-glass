@@ -1,6 +1,6 @@
 # Glasses Speech
 
-Android speech companion for [Django Glass](../README.md). It stores speech
+Android speech companion for [Django](../README.md). It stores speech
 credentials separately and provides a loopback TTS bridge plus a recognition
 service for client-supplied glasses audio.
 
@@ -80,5 +80,5 @@ target instrumentation. It does not enable a service that was off before testing
 - Audio and text are not written to files by the companion. Provider errors are
   reduced to controlled messages and codes; raw response bodies are not logged.
 
-This companion is distributed with Django Glass under [AGPL-3.0](../LICENSE).
+This companion is distributed with Django under [AGPL-3.0](../LICENSE).
 See the [project attribution](../NOTICE.md) for the Visor foundation.

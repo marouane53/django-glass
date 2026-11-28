@@ -64,7 +64,7 @@ class PhoneContacts @Inject constructor(
         pending?.cancel()
         pending = scope.launch {
             delay(ms)
-            Log.i("Visor", "Contacts: " + sync())
+            Log.i("Django", "Contacts: " + sync())
         }
     }
 

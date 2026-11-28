@@ -27,7 +27,7 @@ private const val LANDSCAPE_MODE = "landscape_mode_enabled"
 private const val ASPECT = "capture_aspect_ratio"
 private const val READ_MS = 5 * 60_000L
 
-/** Visor's "Use the camera" is the one switch: whenever it changes, and after every read, the glasses' two follow it. */
+/** Django's "Use the camera" is the one switch: whenever it changes, and after every read, the glasses' two follow it. */
 fun keepCameraInLine(scope: CoroutineScope, settings: GlassesSettings, store: AssistantConfigStore, log: EventLog) {
     scope.launch {
         var lastVision: Boolean? = null
@@ -42,7 +42,7 @@ fun keepCameraInLine(scope: CoroutineScope, settings: GlassesSettings, store: As
             val want = vision.toString()
             // After a read, not one on its way or one the glasses kept; a flip of the switch writes again.
             val due = GLASSES_CAMERA_KEYS.filter { it !in state.pending && (flipped || it !in state.kept) && !same(settings.catalogue[it]?.kind, settings.value(it), want) }
-            if (due.count { settings.write(it, want) } > 0) log.add("Camera: the glasses' own camera use follows Visor's switch, ${if (vision) "on" else "off"}")
+            if (due.count { settings.write(it, want) } > 0) log.add("Camera: the glasses' own camera use follows Django's switch, ${if (vision) "on" else "off"}")
         }
     }
 }

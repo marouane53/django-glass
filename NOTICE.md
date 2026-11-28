@@ -1,6 +1,6 @@
 # Attribution and modification notice
 
-**Django Glass is derived from [Visor](https://github.com/macedonga/visor), created by macedonga and the Visor contributors.**
+**Django is derived from [Visor](https://github.com/macedonga/visor), created by macedonga and the Visor contributors.**
 
 The source snapshot used for this project is Visor v3.0.4, commit
 [`5bb7141524832b4a8c5dba552d50b8e6e385919e`](https://github.com/macedonga/visor/commit/5bb7141524832b4a8c5dba552d50b8e6e385919e).
@@ -38,5 +38,5 @@ under the GNU Affero General Public License version 3. See [LICENSE](LICENSE).
 The license file is retained verbatim from the upstream snapshot. Third-party
 components retain their respective licenses and existing attribution.
 
-Django Glass is independent of the Visor maintainers, Meta, EssilorLuxottica,
+Django is independent of the Visor maintainers, Meta, EssilorLuxottica,
 OpenAI, Google and Microsoft.

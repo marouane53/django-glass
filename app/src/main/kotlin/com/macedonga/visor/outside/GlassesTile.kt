@@ -77,7 +77,7 @@ class GlassesTile : TileService() {
         tile.state = if (glimpse.here || glimpse.mood == Mood.RECORDING || glimpse.mood == Mood.IMPORTING) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.label = getString(R.string.app_name)
         tile.subtitle = glimpse.glasses?.let { getString(R.string.tile_subtitle, words, it) } ?: words
-        tile.icon = Icon.createWithResource(this, R.drawable.ic_stat_visor)
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_stat_django)
         tile.updateTile()
     }
 

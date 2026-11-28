@@ -36,7 +36,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at the Django Glass maintainer, [@marouane53](https://github.com/marouane53), through this repository. All complaints will be reviewed and investigated promptly and fairly.
+Report abusive, harassing, or otherwise unacceptable behavior through this repository to the Django maintainer. All complaints will be reviewed and investigated promptly and fairly. [@marouane53](https://github.com/marouane53).
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

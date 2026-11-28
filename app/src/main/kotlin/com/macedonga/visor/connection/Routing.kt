@@ -285,7 +285,7 @@ fun haversine(a: LatLng, b: LatLng): Double {
 }
 
 // Nominatim's policy asks for a user agent that names the app.
-private const val USER_AGENT = "Visor (https://github.com/macedonga/visor)"
+private const val USER_AGENT = "Django (https://github.com/marouane53/django-glass)"
 
 /** The body of a 200 answer to a GET of [url]; throws on any other. */
 internal suspend fun httpGet(url: String, timeoutMs: Int): String = withContext(Dispatchers.IO) {

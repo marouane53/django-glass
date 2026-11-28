@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Visor: a de-metaified Meta Glasses client" width="100%">
+  <img src="docs/upstream/branding/banner.png" alt="Visor: a de-metaified Meta Glasses client" width="100%">
 </p>
 
 <p align="center">

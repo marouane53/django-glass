@@ -68,7 +68,7 @@ internal fun Registry.tree() {
         if (n != null && !key.isNullOrEmpty()) screen?.attrs?.getOrPut(n) { HashMap() }?.put(key.codePointAt(0), at(2))
         null
     }
-    // Visor does not measure Meta's layout: unmounted, as the app answers before its views exist.
+    // Django does not measure Meta's layout: unmounted, as the app answers before its views exist.
     on("bk.action.component.GetHeight", "bk.action.component.GetWidth") { null }
     on("bk.action.component.GetHeight2", "bk.action.component.GetWidth2") { 0 }
 
@@ -230,7 +230,7 @@ internal fun Registry.tree() {
         "bk.action.privacy.consent.LaunchConsent", "bk.action.privacy.consent.OpenFlow", "bk.action.privacy.consent.OpenBottomSheet",
         "bk.action.privacy.consent.OpenScreen",
     ) {
-        session.log("Meta opened a consent step ($name), which Visor does not draw")
+        session.log("Meta opened a consent step ($name), which Django does not draw")
         null
     }
     on(

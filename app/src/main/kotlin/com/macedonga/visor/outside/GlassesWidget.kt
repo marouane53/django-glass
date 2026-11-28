@@ -68,7 +68,7 @@ suspend fun showWidgets(context: Context, glimpse: Glimpse) {
     val cover = coverOf(context, glimpse.moment)
     for (id in ids) {
         val views = RemoteViews(mapOf(SizeF(110f, 110f) to views(context, glimpse, null), SizeF(WIDE_DP, 110f) to views(context, glimpse, cover)))
-        runCatching { manager.updateAppWidget(id, views) }.onFailure { Log.w("Visor", "widget update failed", it) }
+        runCatching { manager.updateAppWidget(id, views) }.onFailure { Log.w("Django", "widget update failed", it) }
     }
 }
 

@@ -1,4 +1,4 @@
-# Building Django Glass
+# Building Django
 
 ## Requirements
 

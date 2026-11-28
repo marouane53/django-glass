@@ -106,7 +106,7 @@ private fun notifyImported(context: Context, count: Int, uri: String?) {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
     val notification = Notification.Builder(context, CHANNEL)
-        .setSmallIcon(R.drawable.ic_stat_visor)
+        .setSmallIcon(R.drawable.ic_stat_django)
         .setContentTitle(context.resources.getQuantityString(R.plurals.import_done, count, count))
         .setLargeIcon(uri?.let { runCatching { context.contentResolver.loadThumbnail(Uri.parse(it), Size(256, 256), null) }.getOrNull() })
         .setContentIntent(open)

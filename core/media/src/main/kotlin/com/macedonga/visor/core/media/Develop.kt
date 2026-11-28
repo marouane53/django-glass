@@ -221,7 +221,7 @@ fun jpegWithExif(bitmap: Bitmap, exifFrom: File?, takenAt: Long, place: Place?, 
         exif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
         exif.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION, bitmap.width.toString())
         exif.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION, bitmap.height.toString())
-        exif.setAttribute(ExifInterface.TAG_SOFTWARE, "Visor")
+        exif.setAttribute(ExifInterface.TAG_SOFTWARE, "Django")
         if (place != null) writeGps(exif, place)
         exif.saveAttributes()
         return scratch.readBytes()
@@ -249,7 +249,7 @@ private fun writeGps(exif: ExifInterface, place: Place) {
  * then the MP4. [presentationUs] is the clip's instant the photo shows, or -1.
  */
 fun motionPhoto(jpeg: ByteArray, clip: ByteArray, presentationUs: Long): ByteArray {
-    val xmp = """<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Visor">
+    val xmp = """<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Django">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
   <rdf:Description rdf:about=""
     xmlns:GCamera="http://ns.google.com/photos/1.0/camera/"

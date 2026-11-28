@@ -224,7 +224,7 @@ class Assembly(
         private val NAME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
 
         private fun fileName(format: Format, takenAt: Long) =
-            "Visor_" + NAME.format(Instant.ofEpochMilli(takenAt).atZone(ZoneId.systemDefault())) + "." + format.ext
+            "Django_" + NAME.format(Instant.ofEpochMilli(takenAt).atZone(ZoneId.systemDefault())) + "." + format.ext
 
         private fun partName(capture: Capture, assetId: String): String? = when (assetId) {
             capture.main?.id -> MAIN

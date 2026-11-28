@@ -1,5 +1,5 @@
 name: Feature request
-description: Something the glasses can do that Django Glass does not do yet.
+description: Something the glasses can do that Django does not do yet.
 labels: [enhancement]
 body:
   - type: textarea
@@ -13,7 +13,7 @@ body:
     id: meta-app
     attributes:
       label: How the Meta AI app does it
-      description: If the Meta app already has this, say where and how it behaves. Django Glass implements what the glasses expect.
+      description: If the Meta app already has this, say where and how it behaves. Django implements what the glasses expect.
   - type: textarea
     id: more
     attributes:

@@ -1,6 +1,6 @@
 # Spoken notifications
 
-Open **Settings → Notifications → Spoken notifications** in Django Glass.
+Open **Settings → Notifications → Spoken notifications** in Django.
 
 | Source | Default readout |
 | --- | --- |

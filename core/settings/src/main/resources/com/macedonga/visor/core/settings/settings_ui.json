@@ -4876,7 +4876,7 @@
 "key":"capture_aspect_ratio",
 "label":"Media orientation",
 "label_ru":"Ориентация снимков",
-"note":"Portrait (3:4) or landscape (4:3) photos and videos. The glasses always take the whole portrait frame; Visor crops landscape ones to 4:3 as it brings them over.",
+"note":"Portrait (3:4) or landscape (4:3) photos and videos. The glasses always take the whole portrait frame; Django crops landscape ones to 4:3 as it brings them over.",
 "group":"Camera",
 "invert":false,"confidence":"medium",
 "control":{
@@ -4915,8 +4915,8 @@
 258,
 259
 ],
-"note_it":"Foto e video in verticale (3:4) o in orizzontale (4:3). Gli occhiali scattano sempre l'intera inquadratura verticale; Visor ritaglia quelli orizzontali a 4:3 quando li importa.",
-"note_zh":"竖版（3:4）或横版（4:3）照片和视频。眼镜始终拍摄完整的竖版画面；Visor 在传输时会把横版画面裁剪为 4:3。"
+"note_it":"Foto e video in verticale (3:4) o in orizzontale (4:3). Gli occhiali scattano sempre l'intera inquadratura verticale; Django ritaglia quelli orizzontali a 4:3 quando li importa.",
+"note_zh":"竖版（3:4）或横版（4:3）照片和视频。眼镜始终拍摄完整的竖版画面；Django 在传输时会把横版画面裁剪为 4:3。"
 },
 {
 "key":"capture_auto_review",
@@ -10755,7 +10755,7 @@
 {
 "key":"homer_reset_enabled",
 "label":"Factory reset on a timer (demo mode)",
-"note":"Retail demo mode: wipes the glasses every so often. After a wipe they forget Visor and need setting up again.",
+"note":"Retail demo mode: wipes the glasses every so often. After a wipe they forget Django and need setting up again.",
 "group":"Developer and tests",
 "invert":false,"confidence":"medium",
 "control":{
@@ -10785,7 +10785,7 @@
 {
 "key":"landscape_mode_enabled",
 "label":"Landscape mode",
-"note":"The older landscape switch. Visor keeps it in line with Media orientation.",
+"note":"The older landscape switch. Django keeps it in line with Media orientation.",
 "group":"Camera",
 "invert":false,"confidence":"medium",
 "control":{
@@ -10793,8 +10793,8 @@
 },
 "label_it":"Modalità orizzontale",
 "label_zh":"横屏模式",
-"note_it":"Il vecchio interruttore orizzontale. Visor lo tiene allineato all'orientamento dei contenuti multimediali.",
-"note_zh":"旧的横屏开关。Visor 会让它与媒体方向保持一致。",
+"note_it":"Il vecchio interruttore orizzontale. Django lo tiene allineato all'orientamento dei contenuti multimediali.",
+"note_zh":"旧的横屏开关。Django 会让它与媒体方向保持一致。",
 "not_products":[
 258,
 259

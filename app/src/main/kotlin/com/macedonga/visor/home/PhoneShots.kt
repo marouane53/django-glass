@@ -14,10 +14,10 @@ import kotlinx.coroutines.withContext
 /** A photo or video the app has already brought to this phone. */
 data class PhoneShot(val uri: Uri, val video: Boolean, val takenAt: Long)
 
-/** The newest shots in the photos and videos albums, which Visor wrote and so reads back without a media permission. */
-suspend fun recentShots(context: Context, albums: Albums, limit: Int = 80): List<PhoneShot> = withContext(Dispatchers.IO) {
-    val photos = query(context, MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), albums.photosPattern(), video = false, limit)
-    val videos = query(context, MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), albums.videosPattern(), video = true, limit)
+/** The newest shots in the photos and videos albums. */
+suspend fun recentShots(albums: Albums, limit: Int = 80): List<PhoneShot> = withContext(Dispatchers.IO) {
+    val photos = query(albums, MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), video = false, limit)
+    val videos = query(albums, MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), video = true, limit)
     (photos + videos).sortedByDescending { it.takenAt }.take(limit)
 }
 
@@ -46,14 +46,11 @@ fun countWords(resources: Resources, photos: Int, videos: Int): List<String> = l
     videos.takeIf { it > 0 }?.let { resources.getQuantityString(R.plurals.home_videos, it, it) },
 )
 
-private fun query(context: Context, collection: Uri, path: String, video: Boolean, limit: Int): List<PhoneShot> {
+private fun query(albums: Albums, collection: Uri, video: Boolean, limit: Int): List<PhoneShot> {
     val columns = arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DATE_TAKEN, MediaStore.MediaColumns.DATE_ADDED)
     val out = ArrayList<PhoneShot>()
     runCatching {
-        context.contentResolver.query(
-            collection, columns, Albums.MATCH, arrayOf(path),
-            "${MediaStore.MediaColumns.DATE_TAKEN} DESC",
-        )?.use { c ->
+        albums.query(collection, columns, video, "${MediaStore.MediaColumns.DATE_TAKEN} DESC")?.use { c ->
             while (c.moveToNext() && out.size < limit) {
                 val taken = c.getLong(1).takeIf { it > 0 } ?: (c.getLong(2) * 1000)
                 out += PhoneShot(ContentUris.withAppendedId(collection, c.getLong(0)), video, taken)

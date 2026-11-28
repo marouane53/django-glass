@@ -103,7 +103,7 @@ class PhoneMedia @Inject constructor(@ApplicationContext private val context: Co
                 val settings = page.resolveActivity(context.packageManager)
                 // The notification's tap names the settings activity, so no other app can be handed it.
                 if (settings == null || (!startFromHere(page) && !askAccess(Intent(page).setComponent(settings)))) {
-                    log.add("Notification access: Visor may not open settings from the background")
+                    log.add("Notification access: Django may not open settings from the background")
                 }
             }
             MT_SPOTIFY_PLAYLISTS_REQUEST -> connection.send(reply, EMPTY, messageType = MT_SPOTIFY_PLAYLISTS_RESPONSE)
@@ -134,7 +134,7 @@ class PhoneMedia @Inject constructor(@ApplicationContext private val context: Co
 
     private fun listener() = ComponentName(context, MirrorListener::class.java)
 
-    // Visor's own page among the notification listeners, else the list on phones without it.
+    // Django's own page among the notification listeners, else the list on phones without it.
     private fun listenerPage(): Intent {
         val detail = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
             .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, listener().flattenToString())
@@ -259,7 +259,7 @@ class PhoneMedia @Inject constructor(@ApplicationContext private val context: Co
         return startFromHere(intent)
     }
 
-    // Android keeps Visor from opening the settings from the background, so a notification opens them.
+    // Android keeps Django from opening the settings from the background, so a notification opens them.
     private fun askAccess(settings: Intent): Boolean {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return false
         if (!manager.areNotificationsEnabled()) return false
@@ -270,7 +270,7 @@ class PhoneMedia @Inject constructor(@ApplicationContext private val context: Co
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_visor)
+            .setSmallIcon(R.drawable.ic_stat_django)
             .setContentTitle(context.getString(R.string.access_listener_prompt))
             .setContentIntent(open)
             .setAutoCancel(true)

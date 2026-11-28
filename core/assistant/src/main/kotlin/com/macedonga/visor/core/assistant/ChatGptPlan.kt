@@ -125,7 +125,7 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
             val verifier = OAuth.secret(64)
             val page = Uri.parse(AUTHORIZE).buildUpon()
                 .appendQueryParameter("client_id", known ?: DYNAMIC_CLIENT)
-                .apply { if (known == null) appendQueryParameter("agent_name_hint", "Visor") }
+                .apply { if (known == null) appendQueryParameter("agent_name_hint", "Django") }
                 .appendQueryParameter("ext_agent_host_id", hostId())
                 .appendQueryParameter("response_type", "code")
                 .appendQueryParameter("redirect_uri", redirect)
@@ -434,9 +434,9 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
             throw ModelRefused(429, "ChatGPT usage limit reached", Refusal.LIMIT)
         }
         if (code == NOT_ELIGIBLE) {
-            if (!_notShared.value) note("ChatGPT does not share the plan with Visor; its usage setting for Visor decides")
+            if (!_notShared.value) note("ChatGPT plan access needs to be enabled for this app in Usage settings")
             _notShared.value = true
-            throw ModelRefused(403, "ChatGPT does not share this account's plan with Visor", Refusal.PLAN)
+            throw ModelRefused(403, "This ChatGPT account has not granted plan access to Django", Refusal.PLAN)
         }
         val words = err?.optString("message").orEmpty().ifEmpty { json?.optString("detail").orEmpty() }.ifEmpty { code }
         // A capability the plan does not offer, such as a tool, is refused as a server refuses a field.

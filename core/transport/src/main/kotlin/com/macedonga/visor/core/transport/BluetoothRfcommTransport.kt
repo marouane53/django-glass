@@ -143,7 +143,7 @@ class BluetoothRfcommTransport(
 
     private fun permissionRefused(cause: Throwable?) = TransportConnectException(
         ConnectFailure.PERMISSION_REFUSED,
-        "Visor is not allowed to use Bluetooth yet",
+        "Django is not allowed to use Bluetooth yet",
         cause,
     )
 }

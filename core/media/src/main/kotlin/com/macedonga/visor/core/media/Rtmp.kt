@@ -88,7 +88,7 @@ class RtmpPublisher(private val url: String, private val key: String) {
             call(
                 "connect",
                 linkedMapOf(
-                    "app" to app, "type" to "nonprivate", "flashVer" to "FMLE/3.0 (compatible; Visor)", "tcUrl" to tcUrl,
+                    "app" to app, "type" to "nonprivate", "flashVer" to "FMLE/3.0 (compatible; Django)", "tcUrl" to tcUrl,
                     "fourCcList" to listOf("hvc1"),
                 ),
             )
@@ -107,7 +107,7 @@ class RtmpPublisher(private val url: String, private val key: String) {
         val meta = linkedMapOf<String, Any?>(
             "width" to width.toDouble(), "height" to height.toDouble(), "framerate" to frameRate.toDouble(),
             "videocodecid" to if (codec == BroadcastCodec.HEVC) fourCc("hvc1").toDouble() else 7.0,
-            "encoder" to "Visor",
+            "encoder" to "Django",
         )
         if (audio != null) {
             meta["audiocodecid"] = 10.0

@@ -224,7 +224,7 @@ class MapsConstellation @Inject constructor(
         private suspend fun requestRoute(plain: ByteArray) {
             val req = runCatching { Constellation.routeRequest(plain) }.getOrNull()
             if (req == null) {
-                log.add("Maps: a route request Visor could not read")
+                log.add("Maps: a route request Django could not read")
                 runCatching { Constellation.stampOf(plain) }.getOrNull()?.let { routeResult(it, null) }
                 return
             }
@@ -252,7 +252,7 @@ class MapsConstellation @Inject constructor(
         private suspend fun navigate(plain: ByteArray) {
             val req = runCatching { Constellation.navigationRequest(plain) }.getOrNull()
             if (req == null) {
-                log.add("Maps: a trip message Visor could not read")
+                log.add("Maps: a trip message Django could not read")
                 return
             }
             if (!req.start) return stopTrip(req.stamp)
@@ -462,7 +462,7 @@ class MapsConstellation @Inject constructor(
         private const val REROUTE_FIXES = 5
         private const val FRESH_FIX_MS = 10_000L
 
-        // The Display's ManeuverType for each of Visor's Dir values.
+        // The Display's ManeuverType for each of Django's Dir values.
         private val MANEUVER_TYPES = intArrayOf(20, 19, 3, 1, 2, 10, 5, 4, 6, 15, 10, 16, 7, 26, 27)
     }
 }

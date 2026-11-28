@@ -23,7 +23,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-/** The glasses' settings for VDK apps, from Visor's catalogue: all readable, the everyday ones writable. */
+/** The glasses' settings for VDK apps, from Django's catalogue: all readable, the everyday ones writable. */
 @Singleton
 class KitSettings @Inject constructor(
     private val connection: GlassesConnection,
@@ -46,7 +46,7 @@ class KitSettings @Inject constructor(
         if (!now.writable) throw KitException(ErrorCode.REFUSED, "Apps may not change $key.", reason = "read_only")
         if (!now.accepts(value)) throw KitException(ErrorCode.INVALID_PARAMS, "$key does not take $value.", reason = "invalid_value")
         if (connection.state.value.link != LinkState.READY) throw KitException(ErrorCode.NOT_CONNECTED, "The glasses are not connected.")
-        if (!settings.write(key, value)) throw KitException(ErrorCode.FAILED, "Visor could not send $key to the glasses.")
+        if (!settings.write(key, value)) throw KitException(ErrorCode.FAILED, "Django could not send $key to the glasses.")
         return setting(key, settings.state.value)
     }
 
@@ -112,7 +112,7 @@ class KitSettings @Inject constructor(
         control is Control.Number || control is Control.Text || control is Control.Locale
 
     private companion object {
-        // Updates, resets, heat protection, developer switches and logging stay with Visor and the person.
+        // Updates, resets, heat protection, developer switches and logging stay with Django and the person.
         val SYSTEM_GROUPS = setOf("Updates and system", "Developer and tests")
         val SYSTEM_KEY = Regex("ota|update|reset|thermal|developer|logging|devkit")
     }

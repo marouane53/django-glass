@@ -7,11 +7,11 @@
     <string name="webapps_url">Address (https)</string>
     <string name="webapps_bluetooth">Nearby Bluetooth devices</string>
     <string name="webapps_bluetooth_failed">Could not change it: %1$s</string>
-    <string name="webapps_access">Visor access</string>
+    <string name="webapps_access">Django access</string>
     <string name="webapps_saving_read">Reading the glasses\' configuration. This happens once and can take a minute.</string>
     <string name="webapps_saving_send">Saving to the glasses…</string>
     <string name="webapps_summary_bluetooth">Bluetooth</string>
-    <string name="webapps_summary_visor">Visor: %1$s</string>
+    <string name="webapps_summary_visor">Django: %1$s</string>
     <string name="webapps_tools">Web app tools for your assistant</string>
     <string name="webapps_tools_sub">A web app open on the glasses can give your assistant tools to use, such as adding to its own list. Changing it writes the glasses\' configuration.</string>
     <string name="webapps_on_glasses">On the glasses</string>

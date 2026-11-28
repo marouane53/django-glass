@@ -2,7 +2,7 @@
 <resources>
     <string name="dot_call_controls">Django dot call controls</string>
     <string name="dot_call_accessibility_description">Starts or ends your existing Django dot call in ChatGPT when you request it. Reads ChatGPT controls only; does not type or send messages. Your normal glasses assistant keeps working separately.</string>
-    <string name="app_name" translatable="false">Django Glass</string>
+    <string name="app_name" translatable="false">Django</string>
     <string name="cancel">Cancel</string>
     <string name="done">Done</string>
     <string name="allow">Allow</string>
@@ -176,7 +176,7 @@
     <string name="live_problem_not_connected">The glasses are not connected.</string>
     <string name="live_problem_wifi_off">Wi-Fi is off.</string>
     <string name="live_problem_wifi_busy">Wi-Fi to the glasses is busy.</string>
-    <string name="live_problem_wifi_direct">Visor needs the permission for nearby Wi-Fi devices.</string>
+    <string name="live_problem_wifi_direct">Django needs the permission for nearby Wi-Fi devices.</string>
     <string name="live_problem_no_key">Set up these glasses on this phone.</string>
     <string name="live_problem_join">The glasses could not reach the phone.</string>
     <string name="live_problem_session">The glasses did not answer over Wi-Fi.</string>
@@ -243,7 +243,7 @@
     <string name="live_stopped_heat">The glasses stopped the camera: they are too hot</string>
     <string name="live_stopped_battery">The glasses stopped the camera: the battery is low</string>
     <string name="live_stopped_folded">The glasses stopped the camera: they were folded</string>
-    <string name="live_problem_vpn">Exclude Visor from the VPN.</string>
+    <string name="live_problem_vpn">Exclude Django from the VPN.</string>
     <string name="live_drops">The stream keeps dropping</string>
     <string name="live_use_glasses_host">Use the glasses\' Wi-Fi</string>
     <string name="language_voice">Voice</string>
@@ -325,7 +325,7 @@
     <string name="meta_ai_listening">Listening…</string>
     <string name="meta_ai_release_cancel">Let go to cancel</string>
     <string name="meta_ai_not_heard">Nothing heard.</string>
-    <string name="meta_ai_mic">Visor needs the microphone to hear you.</string>
+    <string name="meta_ai_mic">Django needs the microphone to hear you.</string>
     <string name="meta_ai_continuing">Continuing · %1$s</string>
     <string name="meta_ai_new">New conversation</string>
     <string name="meta_ai_remembered">Remembered · %1$s</string>
@@ -414,7 +414,7 @@
     <string name="settings_how_drive">Written into the glasses\' store, %1$s</string>
     <string name="settings_how_nothing">No table names it</string>
     <string name="settings_mapping">Mapping: %1$s confidence</string>
-    <string name="settings_never_written">Visor never writes this one.</string>
+    <string name="settings_never_written">Django never writes this one.</string>
     <string name="settings_no_way_to_write">The glasses give no way to write this one.</string>
     <string name="settings_in_phone_settings">In phone settings</string>
     <string name="settings_flags">Feature flags</string>
@@ -450,7 +450,7 @@
     <string name="settings_kit_client_name">Name</string>
     <string name="settings_kit_client_create">Create</string>
     <string name="settings_kit_client_token">Token for %1$s</string>
-    <string name="settings_kit_client_token_once">Copy it now: Visor shows it only once.</string>
+    <string name="settings_kit_client_token_once">Copy it now: Django shows it only once.</string>
     <string name="settings_kit_client_webhook">Webhook URL (optional)</string>
     <string name="settings_kit_client_posts">posts to %1$s</string>
     <string name="kit_consent_title">Let %1$s use your glasses?</string>
@@ -462,11 +462,11 @@
     <string name="kit_scope_band">Read the Neural Band\'s gestures and make it vibrate</string>
     <string name="kit_scope_display">Show text on the Display</string>
     <string name="kit_scope_name_state">Status</string>
-    <string name="kit_scope_pairs">See all your glasses set up in Visor, with their names and looks, and choose which pair Visor connects to</string>
+    <string name="kit_scope_pairs">See all your glasses set up in Django, with their names and looks, and choose which pair Django connects to</string>
     <string name="kit_scope_name_inputs">Touch and buttons</string>
     <string name="kit_scope_inputs">Know when you tap or swipe the touchpad or press a button on your glasses</string>
     <string name="kit_scope_name_microphone">Microphone</string>
-    <string name="kit_scope_microphone">Turn what your glasses\' microphones hear into text, while the app or Visor is on screen</string>
+    <string name="kit_scope_microphone">Turn what your glasses\' microphones hear into text, while the app or Django is on screen</string>
     <string name="kit_scope_name_pairs">Your glasses</string>
     <string name="kit_scope_name_camera">Camera</string>
     <string name="kit_scope_name_band">Neural Band</string>
@@ -601,7 +601,7 @@
     <string name="glasses_set_up_new">Set up other glasses</string>
     <string name="glasses_forget">Forget these glasses</string>
     <string name="glasses_forget_title">Forget these glasses?</string>
-    <string name="glasses_forget_text">Visor disconnects and drops their key. To use them, set them up again.</string>
+    <string name="glasses_forget_text">Django disconnects and drops their key. To use them, set them up again.</string>
 
     <string name="ai_answer">Answer with your model</string>
     <string name="ai_answer_sub">Off, the glasses\' own assistant has no phone behind it.</string>
@@ -614,7 +614,7 @@
     <string name="ai_provider_chatgpt_sub">Your Plus or Pro plan</string>
     <string name="ai_provider_openai_sub">API key</string>
     <string name="ai_get_key">Get a key</string>
-    <string name="ai_chatgpt_not_shared">Plan not shared with Visor</string>
+    <string name="ai_chatgpt_not_shared">Plan not shared with Django</string>
     <string name="ai_pick_model">Pick a model</string>
     <string name="ai_see_limits">See limits</string>
     <string name="ai_add_credit">Add credit</string>
@@ -633,7 +633,7 @@
     <string name="ai_chatgpt_plan_text">Eligible usage in this app uses your ChatGPT plan. Manage usage in your ChatGPT settings.</string>
     <string name="ai_chatgpt_got_it">Got it</string>
     <string name="ai_chatgpt_declined">Sign-in cancelled</string>
-    <string name="ai_chatgpt_not_eligible">ChatGPT is not sharing your plan with Visor. In ChatGPT settings, under Usage, allow Visor to use your plan, then try again.</string>
+    <string name="ai_chatgpt_not_eligible">ChatGPT is not sharing your plan with Django. In ChatGPT settings, under Usage, allow this app to use your plan, then try again.</string>
     <string name="ai_chatgpt_expired">Signed out: sign in again</string>
     <string name="ai_chatgpt_failed">Sign-in failed: %1$s</string>
     <string name="ai_web_unavailable">This model can\'t search the web</string>
@@ -737,16 +737,16 @@
     <string name="access_calendar">Calendar</string>
     <string name="access_calendar_why">So Meta AI can tell you what is on your calendar.</string>
     <string name="access_location_always">Location, all the time</string>
-    <string name="access_location_always_why">So the place is noted even with Visor closed. Choose “Allow all the time”.</string>
+    <string name="access_location_always_why">So the place is noted even with Django closed. Choose “Allow all the time”.</string>
     <string name="access_wifi">Nearby Wi-Fi</string>
     <string name="access_wifi_why">For imports and the live view over Wi-Fi Direct.</string>
     <string name="access_companion">Companion device</string>
-    <string name="access_companion_why">So the assistant can open directions and music on the phone while Visor is in the background.</string>
+    <string name="access_companion_why">So the assistant can open directions and music on the phone while Django is in the background.</string>
     <string name="texts_photo">Photo</string>
     <string name="texts_video">Video</string>
     <string name="texts_attachment">Attachment</string>
     <string name="texts_refused_title">SMS not allowed</string>
-    <string name="texts_refused">Allow SMS for Visor on the phone.</string>
+    <string name="texts_refused">Allow SMS for Django on the phone.</string>
 
     <string name="advanced_title">Advanced settings</string>
     <string name="advanced_read_again">Read again</string>
@@ -789,7 +789,7 @@
     <string name="adv_increase">Increase</string>
     <string name="adv_value_n">Value %1$s</string>
     <string name="adv_stored_as">Stored as %1$d</string>
-    <string name="adv_unreadable">The glasses hold a value Visor cannot read.</string>
+    <string name="adv_unreadable">The glasses hold a value Django cannot read.</string>
     <string name="adv_not_mapped">Its layout is not mapped.</string>
     <string name="adv_entry_unreadable">Unreadable, kept as it is</string>
     <plurals name="adv_unknown_fields">
@@ -818,32 +818,32 @@
     <string name="backup_restore">Restore</string>
     <string name="backup_restored">Restored</string>
     <string name="backup_restoring">Writing to the glasses: %1$d of %2$d</string>
-    <string name="backup_not_ours">That file is not a Visor backup</string>
+    <string name="backup_not_ours">That file is not a Django backup</string>
     <string name="backup_save_failed">Could not save the file</string>
     <string name="backup_restore_failed">Could not restore</string>
     <plurals name="backup_settings_not_restored">
         <item quantity="one">%1$d glasses setting not restored</item>
         <item quantity="other">%1$d glasses settings not restored</item>
     </plurals>
-    <string name="backup_visor_only">Visor only</string>
+    <string name="backup_visor_only">Django only</string>
     <string name="backup_restore_title">Restore the backup of %1$s?</string>
-    <string name="backup_restore_text">Visor\'s settings and %1$d on the glasses.</string>
-    <string name="backup_restore_away">Visor\'s settings only. Connect the glasses and restore again for their %1$d.</string>
+    <string name="backup_restore_text">Django\'s settings and %1$d on the glasses.</string>
+    <string name="backup_restore_away">Django\'s settings only. Connect the glasses and restore again for their %1$d.</string>
 
     <string name="about_title">About</string>
-    <string name="about_sum" translatable="false">Visor %1$s</string>
+    <string name="about_sum" translatable="false">Django %1$s</string>
     <string name="about_debug">Debug build</string>
     <string name="about_credits">Made with</string>
     <string name="about_report">Report a problem</string>
     <string name="about_discuss">Start a discussion</string>
     <string name="about_star">Leave a star</string>
-    <string name="star_title">Enjoying Visor?</string>
+    <string name="star_title">Enjoying Django?</string>
     <string name="star_ok">Star on GitHub</string>
     <string name="star_no">Later</string>
     <string name="star_never">Don\'t show again</string>
-    <string name="about_sum_update">Visor %1$s, %2$s is out</string>
+    <string name="about_sum_update">Django %1$s, %2$s is out</string>
     <string name="update_channel">Updates</string>
-    <string name="update_ready">Visor %1$s is out</string>
+    <string name="update_ready">Django %1$s is out</string>
     <string name="update_ready_text">Download it from GitHub</string>
     <string name="update_look">Check for updates</string>
 
@@ -853,11 +853,11 @@
     <string name="event_log_clear_title">Clear the log?</string>
     <string name="event_log_empty">Nothing has happened yet</string>
     <string name="event_log_bug_report">Get a bug report from the glasses</string>
-    <string name="bug_report_asked">Bug report on its way to Download/Visor</string>
+    <string name="bug_report_asked">Bug report on its way to Download/Django</string>
 
     <!-- Onboarding -->
     <string name="onboard_begin">Begin</string>
-    <string name="onboard_access_title">What Visor asks for</string>
+    <string name="onboard_access_title">What Django asks for</string>
     <string name="onboard_skip">Not now</string>
     <string name="onboard_continue">Continue</string>
     <string name="onboard_needed">Needed</string>
@@ -890,7 +890,7 @@
     <string name="onboard_keep_close">Keep them close to the phone.</string>
     <string name="onboard_ready">Ready.</string>
     <string name="onboard_ready_sub">This phone now owns %1$s.</string>
-    <string name="onboard_open">Open Visor</string>
+    <string name="onboard_open">Open Django</string>
     <string name="onboard_failed">Not set up</string>
     <string name="onboard_wrong_owner">These glasses belong to another Meta account. Log in with the one that set them up in the Meta AI app, or reset the glasses.</string>
     <string name="onboard_stopped_at">Stopped at: %1$s</string>
@@ -988,7 +988,7 @@
     <string name="features_refused">The glasses kept the old value. Try again.</string>
     <string name="features_restart_title">Restart the glasses</string>
     <string name="features_how">How to use it</string>
-    <string name="features_changes">What Visor changes</string>
+    <string name="features_changes">What Django changes</string>
     <string name="features_turn_on">Turn on</string>
     <string name="features_turn_off">Turn off</string>
     <string name="feature_cf">Conversation focus</string>
@@ -1198,7 +1198,7 @@
     <string name="toolkit_channel">Glasses setup for apps</string>
     <string name="toolkit_notification">Setting up your glasses for apps</string>
     <string name="toolkit_title">Let apps use your glasses\' screen?</string>
-    <string name="toolkit_body">%1$s wants to show things on your glasses\' screen. Visor sets your glasses up for it once.</string>
+    <string name="toolkit_body">%1$s wants to show things on your glasses\' screen. Django sets your glasses up for it once.</string>
     <string name="toolkit_allow">Set up</string>
     <string name="toolkit_deny">Not now</string>
     <string name="toolkit_ready">Your glasses are ready</string>
@@ -1206,12 +1206,12 @@
     <string name="toolkit_close">Close</string>
     <string name="toolkit_step_key">Checking your glasses</string>
     <string name="toolkit_step_app">Installing Meta\'s toolkit app</string>
-    <string name="toolkit_step_manifest">Adding Visor to your glasses</string>
+    <string name="toolkit_step_manifest">Adding Django to your glasses</string>
     <string name="toolkit_step_permissions">Allowing the toolkit</string>
     <string name="kit_scope_name_motion">Motion</string>
     <string name="kit_scope_motion">Read how your glasses and your Neural Band move and turn, many times a second, from their motion sensors.</string>
     <string name="toolkit_point_app">Installs Meta\'s toolkit app on your glasses</string>
-    <string name="toolkit_point_trust">Adds Visor to the devices your glasses trust</string>
+    <string name="toolkit_point_trust">Adds Django to the devices your glasses trust</string>
     <string name="toolkit_point_once">Once for each pair of glasses</string>
     <string name="toolkit_background">You can close this. Setup goes on, and its notification shows how far it has come.</string>
     <string name="toolkit_ready_sub">Apps can use your glasses\' screen and motion now.</string>

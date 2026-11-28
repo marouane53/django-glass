@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <!-- The companion device's presence wakes Visor from the background, as the Meta app's does. -->
+    <!-- The companion device's presence wakes Django from the background, as the Meta app's does. -->
     <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND" />
@@ -92,7 +92,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Visor"
+        android:theme="@style/Theme.Django"
         android:usesCleartextTraffic="true">
 
         <!-- User-enabled, package-scoped controls for the native ChatGPT dot call. -->
@@ -281,7 +281,7 @@
         <service
             android:name=".outside.GlassesTile"
             android:exported="true"
-            android:icon="@drawable/ic_stat_visor"
+            android:icon="@drawable/ic_stat_django"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

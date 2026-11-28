@@ -20,7 +20,7 @@ internal val LOGGING = setOf(
     "bk.action.ttrc.SurfaceLeft", "bk.action.accessibility.SetFocus", "bk.action.accessibility.Announcement",
 )
 
-/** Device facts, timers, animations, links, and the services Visor lacks, answered as on a phone without them. */
+/** Device facts, timers, animations, links, and the services Django lacks, answered as on a phone without them. */
 internal fun Registry.platform() {
     // ---- Device facts ----
     on("bk.action.caa.login.GetUniqueDeviceId", "bk.fx.action.GetFamilyDeviceId") { session.deviceId }
@@ -192,7 +192,7 @@ internal fun Registry.platform() {
         str(0)?.let(session.host::openUrl)
         null
     }
-    // Visor does not hand the user to other Meta apps; the store page is the link it can open.
+    // Django does not hand the user to other Meta apps; the store page is the link it can open.
     on("bk.action.DeeplinkToOtherAppOrDirectToAppStore") {
         str(1)?.let(session.host::openUrl)
         null
@@ -262,7 +262,7 @@ internal fun Registry.platform() {
         null
     }
     on("bk.action.mma.StartSSOLogin", "bk.action.mma.StartSSOLoginV2") {
-        session.log("Meta asked for a Workplace single sign-on, which Visor does not do")
+        session.log("Meta asked for a Workplace single sign-on, which Django does not do")
         null
     }
     on("bk.action.CompleteAllLoginDiagnosis", "bk.action.FRXEndFlowEvent") { null }
@@ -273,7 +273,7 @@ internal fun Registry.platform() {
     }
     on("bk.action.mwa.quickpromotion.Dismiss", "bk.action.mwa.support.OpenFlyTrap") { null }
 
-    // ---- Passkeys: Visor has no Credential Manager ----
+    // ---- Passkeys: Django has no Credential Manager ----
     on("bk.action.fx.passkey.CheckDeviceEligibility") { "credential_manager_unavailable" }
     on("bk.action.fx.passkey.CreatePasskey") {
         val options = node(0)
@@ -395,7 +395,7 @@ internal fun Registry.platform() {
         null
     }
     on("authenticity.action.OpenIdCapture", "authenticity.action.OpenSelfieCapture", "authenticity.action.Upload") {
-        session.log("Meta asked for an identity check with the camera, which Visor cannot do")
+        session.log("Meta asked for an identity check with the camera, which Django cannot do")
         null
     }
     on("bk.action.UploadV2") {

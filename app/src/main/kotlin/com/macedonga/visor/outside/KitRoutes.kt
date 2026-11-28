@@ -107,7 +107,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** What the VDK's methods and topics do in Visor: each one is a thing Visor already does for its own screens. */
+/** What the VDK's methods and topics do in Django: each one is a thing Django already does for its own screens. */
 @Singleton
 class KitRoutes @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -135,7 +135,7 @@ class KitRoutes @Inject constructor(
 ) {
     fun routes(): Routes = Routes().apply {
         answer(Methods.GLASSES_STATUS) { _, _ -> glassesStatus(known()) }
-        // Not before Visor has read its store: until then, no pair reads the same as none set up.
+        // Not before Django has read its store: until then, no pair reads the same as none set up.
         stream(Topics.GLASSES_STATUS) { _, _ ->
             connection.state.filter { it.target != null || it.noGlasses }.map(::glassesStatus).distinctUntilChanged()
         }
@@ -230,7 +230,7 @@ class KitRoutes @Inject constructor(
         stream(Topics.VOICE_REQUESTS) { caller, offer -> voices.offer(caller.packageName, offer.phrases) }
         stream(Topics.VOICE_TRANSCRIPTS) { caller, request -> transcripts.transcripts(caller, request) }
         // Motion comes from the glasses' data collection daemon, with nothing on their screen; layouts from Meta's
-        // toolkit app, through a toolkit session of Visor's own.
+        // toolkit app, through a toolkit session of Django's own.
         stream(Topics.GLASSES_MOTION) { _, request ->
             if (request.rateHz !in MotionRequest.RATES) {
                 throw KitException(ErrorCode.INVALID_PARAMS, "The glasses sample at ${MotionRequest.RATES.joinToString()} Hz.")
@@ -289,13 +289,13 @@ class KitRoutes @Inject constructor(
         }
     }
 
-    /** Raw access is for research: only while Developer mode is on, and never to the services Visor keeps to itself. */
+    /** Raw access is for research: only while Developer mode is on, and never to the services Django keeps to itself. */
     private fun requireRaw(service: Int) {
-        if (!developer.on.value) throw KitException(ErrorCode.UNSUPPORTED, "Raw access needs Developer mode on in Visor.")
-        if (service in KEPT_SERVICES) throw KitException(ErrorCode.REFUSED, "Visor keeps service $service to itself.")
+        if (!developer.on.value) throw KitException(ErrorCode.UNSUPPORTED, "Raw access needs Developer mode on in Django.")
+        if (service in KEPT_SERVICES) throw KitException(ErrorCode.REFUSED, "Django keeps service $service to itself.")
     }
 
-    /** The state once Visor knows whether it has glasses: just after a start, its store is still being read. */
+    /** The state once Django knows whether it has glasses: just after a start, its store is still being read. */
     private suspend fun known(): GlassesState =
         withTimeoutOrNull(READ_MS) { connection.state.first { it.target != null || it.noGlasses } } ?: connection.state.value
 
@@ -324,7 +324,7 @@ class KitRoutes @Inject constructor(
         )
     }
 
-    // Visor reads its pairs from the identity store when its home first asks; after a fresh start, the kit asks.
+    // Django reads its pairs from the identity store when its home first asks; after a fresh start, the kit asks.
     private suspend fun readPairs() {
         if (pairs.stored.value != null) return
         pairs.refresh()
@@ -354,17 +354,17 @@ class KitRoutes @Inject constructor(
         band = bands.firstOrNull { it.glasses == pair.serial }?.serial,
     )
 
-    /** Makes [serial] the active pair, as the person's pick on the home does, and answers once Visor has switched. */
+    /** Makes [serial] the active pair, as the person's pick on the home does, and answers once Django has switched. */
     private suspend fun select(serial: String): GlassesPair {
         readPairs()
         if (pairs.all.value.none { it.serial == serial && !it.demo }) {
-            throw KitException(ErrorCode.INVALID_PARAMS, "Visor has no pair $serial set up.", reason = "not_found")
+            throw KitException(ErrorCode.INVALID_PARAMS, "Django has no pair $serial set up.", reason = "not_found")
         }
         if (serial != connection.pair.value) {
             if (live.usingWifi || media.importing.value) throw KitException(ErrorCode.BUSY, "A Live view or an import holds the glasses.")
             pairs.connect(serial)
             withTimeoutOrNull(SWITCH_MS) { connection.pair.first { it == serial } }
-                ?: throw KitException(ErrorCode.TIMEOUT, "Visor did not switch to $serial.")
+                ?: throw KitException(ErrorCode.TIMEOUT, "Django did not switch to $serial.")
         }
         return pairsNow().first { it.serial == serial }
     }
@@ -512,7 +512,7 @@ class KitRoutes @Inject constructor(
     private fun requireBand() {
         if (paired()) return
         if (connection.state.value.device?.bandBattery != null) {
-            throw KitException(ErrorCode.UNSUPPORTED, "Only the Display holds this Neural Band. Set it up in Visor's band settings.", reason = "not_set_up")
+            throw KitException(ErrorCode.UNSUPPORTED, "Only the Display holds this Neural Band. Set it up in Django's band settings.", reason = "not_set_up")
         }
         throw KitException(ErrorCode.UNSUPPORTED, "No Neural Band is paired with these glasses.")
     }
@@ -523,7 +523,7 @@ class KitRoutes @Inject constructor(
         if (connection.state.value.link != LinkState.READY) throw KitException(ErrorCode.NOT_CONNECTED, "The glasses are not connected.")
     }
 
-    /** The band Visor holds, or else the one the Display reports it holds, with the battery it reports. */
+    /** The band Django holds, or else the one the Display reports it holds, with the battery it reports. */
     private fun bandStatus(state: BandState): BandStatus {
         val held = paired()
         val device = connection.state.value.device
@@ -611,7 +611,7 @@ class KitRoutes @Inject constructor(
 
     private fun notShared() = KitException(
         ErrorCode.UNSUPPORTED,
-        "The band's motion needs the band shared with the phone: in Visor, Settings > Neural Band > Share with the phone.",
+        "The band's motion needs the band shared with the phone: in Django, Settings > Neural Band > Share with the phone.",
         reason = "not_shared",
     )
 

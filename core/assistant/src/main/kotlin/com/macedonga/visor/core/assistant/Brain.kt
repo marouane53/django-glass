@@ -27,9 +27,9 @@ import org.json.JSONObject
 /** One question, its answer and what the tools did for it: the conversation behind the next question. */
 data class Exchange(val question: String, val answer: String, val actions: List<ToolAction> = emptyList())
 
-/** The answer as the model reads it later: with Visor's note of what the tools did, so words alone never pass for an action. */
+/** The answer as the model reads it later: with Django's note of what the tools did, so words alone never pass for an action. */
 private fun Exchange.told(): String = if (actions.isEmpty()) answer else
-    answer + " [Visor: " + actions.joinToString("; ") { "${it.server.ifEmpty { "Phone" }} · ${it.what}, " + if (it.ok) "done" else "failed" } + "]"
+    answer + " [Django: " + actions.joinToString("; ") { "${it.server.ifEmpty { "Phone" }} · ${it.what}, " + if (it.ok) "done" else "failed" } + "]"
 
 /** [past] as the conversation so far: each question and its answer. */
 private fun JSONArray.putPast(past: List<Exchange>): JSONArray = apply {
@@ -189,7 +189,7 @@ class Brain(
             if (!search || turn.toolsRan || !SEARCH_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
             ask(c, system, recent, question, image, tokens, false, turn).also { store.markCannotSearch(c) }
         }
-        val text = (if (search) spoken(said) else said).replace(VISOR_NOTE, "").trim()
+        val text = (if (search) spoken(said) else said).replace(TOOL_NOTE, "").trim()
         check(text.isNotEmpty()) { "the model gave an empty answer" }
         Reply(text, turn.remembered, turn.actions, turn.ends)
     }
@@ -469,7 +469,7 @@ class Brain(
             if (search) put(JSONObject().put("type", "web_search"))
             if (functions.isEmpty()) return@apply
             if (plan && PLAN_FLAT !in refused) {
-                put(JSONObject().put("type", "namespace").put("name", NAMESPACE).put("description", "Visor's tools on the glasses and the phone.")
+                put(JSONObject().put("type", "namespace").put("name", NAMESPACE).put("description", "Django's tools on the glasses and the phone.")
                     .put("tools", JSONArray(functions)))
             } else functions.forEach(::put)
         }
@@ -554,7 +554,7 @@ class Brain(
         }
 
     /**
-     * Gemini's own API, the one with Google Search. Search and Visor's tools go together from Gemini 3, the model's
+     * Gemini's own API, the one with Google Search. Search and Django's tools go together from Gemini 3, the model's
      * turns going back exactly as they came, with their thought signatures; an older model refuses the pair, and
      * answer() then asks without search.
      */
@@ -633,7 +633,7 @@ class Brain(
     private fun geminiImage(image: ByteArray) = JSONObject().put("inlineData",
         JSONObject().put("mimeType", "image/jpeg").put("data", Base64.encodeToString(image, Base64.NO_WRAP)))
 
-    /** What a server refused (a model's reasoning setting, the plan's namespaces), left out until Visor restarts. */
+    /** What a server refused (a model's reasoning setting, the plan's namespaces), left out until Django restarts. */
     private val refused = java.util.Collections.synchronizedSet(HashSet<String>())
 
     /**
@@ -720,8 +720,8 @@ class Brain(
     private companion object {
         /** Thinking a server left inline in the answer. */
         val THINKING = Regex("(?s)<think>.*?</think>")
-        /** Visor's note on past answers, should the model copy it into its own. */
-        val VISOR_NOTE = Regex("""\s*\[Visor:[^\]]*]""")
+        /** Django's note on past answers, should the model copy it into its own. */
+        val TOOL_NOTE = Regex("""\s*\[(?:Django|Visor):[^\]]*]""")
         val TOOLS_REFUSED = Regex("tool|function", RegexOption.IGNORE_CASE)
         // A request the server turned down as written, not a key, a limit or an outage.
         val SEARCH_REFUSED = Regex("^the model answered (400|404|422):")
@@ -839,4 +839,4 @@ class Brain(
 
 // A tool takes the glasses' photo by a placeholder; McpHub puts the photo in its place.
 private val PHOTO_PROMPT = " When a glasses photo is available, hand it to a tool by writing \"$PHOTO_BASE64\" as " +
-    "that argument's value for the JPEG as base64, or \"$PHOTO_DATA_URL\" for it as a data URL; Visor puts the photo there."
+    "that argument's value for the JPEG as base64, or \"$PHOTO_DATA_URL\" for it as a data URL; Django puts the photo there."

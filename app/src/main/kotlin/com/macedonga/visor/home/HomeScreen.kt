@@ -171,7 +171,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         // Whatever is saved shows up here as soon as it lands.
-        viewModelScope.launch { media.saved.collect { shots.value = recentShots(context, albums) } }
+        viewModelScope.launch { media.saved.collect { shots.value = recentShots(albums) } }
         viewModelScope.launch {
             var imported = false
             media.importing.collectLatest { on ->
@@ -202,7 +202,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch { shots.value = recentShots(context, albums) }
+        viewModelScope.launch { shots.value = recentShots(albums) }
         viewModelScope.launch { firstName.value = ownerFirstName(context) }
         pairs.refresh()
     }

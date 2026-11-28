@@ -33,9 +33,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * svc26, smartglasses_sharing: the glasses share a capture through the phone. Visor opens the channel on connect with
+ * svc26, smartglasses_sharing: the glasses share a capture through the phone. Django opens the channel on connect with
  * an empty enumerate request (3), as the Meta app does; the glasses' sharing service refuses to start without it. A
- * photo comes as an offer (7, or 11 for the last capture) that Visor accepts (8), then over airship "Sharing" under the
+ * photo comes as an offer (7, or 11 for the last capture) that Django accepts (8), then over airship "Sharing" under the
  * offer's uuid, then a media intent (5) naming where it goes. A share to the phone's own texts (provider 3) goes out
  * as an MMS and is answered (6) with the result; other destinations are the Meta app's and are turned down. The
  * assistant's photo comes the same way and still reaches the assistant.
@@ -128,13 +128,13 @@ class PhoneSharing @Inject constructor(
         val id = requests.start("mms://share/${share.bytes(8).decodeToString()}", RequestSource.SMS)
         val provider = destination.varint(1).toInt()
         val outcome: Pair<Long, String?> = if (provider != GlassesNotification.PROVIDER_NATIVE) {
-            SHARE_ERROR_APP to "Only the phone's texts can be sent through Visor"
+            SHARE_ERROR_APP to "Only the phone's texts can be sent through Django"
         } else {
             val numbers = destination.repeatedBytes(6).map { Wire.parse(it).bytes(1).decodeToString() }.filter { it.isNotBlank() }
             val to = numbers.ifEmpty { messages.addressesOf(destination.bytes(3).decodeToString()) }
             val file = files[media]?.let { withTimeoutOrNull(FILE_WAIT_MS) { it.await() } }
             when {
-                !context.allows(Manifest.permission.SEND_SMS) -> SHARE_ERROR_NATIVE_DISABLED to "SMS not allowed in Visor"
+                !context.allows(Manifest.permission.SEND_SMS) -> SHARE_ERROR_NATIVE_DISABLED to "SMS not allowed in Django"
                 to.isEmpty() -> SHARE_ERROR_APP to "No recipient"
                 to.size > 1 -> SHARE_ERROR_APP to "Group messages are not supported"
                 file == null -> SHARE_ERROR_MEDIA_PROCESSING to "The picture did not arrive"

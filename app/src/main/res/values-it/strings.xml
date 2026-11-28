@@ -173,7 +173,7 @@
     <string name="live_problem_not_connected">Gli occhiali non sono collegati.</string>
     <string name="live_problem_wifi_off">Il Wi-Fi è spento.</string>
     <string name="live_problem_wifi_busy">Il Wi-Fi con gli occhiali è occupato.</string>
-    <string name="live_problem_wifi_direct">Visor ha bisogno del permesso per i dispositivi Wi-Fi vicini.</string>
+    <string name="live_problem_wifi_direct">Django ha bisogno del permesso per i dispositivi Wi-Fi vicini.</string>
     <string name="live_problem_no_key">Configura questi occhiali su questo telefono.</string>
     <string name="live_problem_join">Gli occhiali non hanno raggiunto il telefono.</string>
     <string name="live_problem_session">Gli occhiali non hanno risposto via Wi-Fi.</string>
@@ -240,7 +240,7 @@
     <string name="live_stopped_heat">Gli occhiali hanno fermato la fotocamera: sono troppo caldi</string>
     <string name="live_stopped_battery">Gli occhiali hanno fermato la fotocamera: batteria scarica</string>
     <string name="live_stopped_folded">Gli occhiali hanno fermato la fotocamera: sono stati chiusi</string>
-    <string name="live_problem_vpn">Escludi Visor dalla VPN.</string>
+    <string name="live_problem_vpn">Escludi Django dalla VPN.</string>
     <string name="live_drops">Lo streaming si interrompe spesso</string>
     <string name="live_use_glasses_host">Usa il Wi-Fi degli occhiali</string>
     <string name="language_voice">Voce</string>
@@ -322,7 +322,7 @@
     <string name="meta_ai_listening">In ascolto…</string>
     <string name="meta_ai_release_cancel">Lascia per annullare</string>
     <string name="meta_ai_not_heard">Non ho sentito nulla.</string>
-    <string name="meta_ai_mic">A Visor serve il microfono per sentirti.</string>
+    <string name="meta_ai_mic">A Django serve il microfono per sentirti.</string>
     <string name="meta_ai_continuing">Continua · %1$s</string>
     <string name="meta_ai_new">Nuova conversazione</string>
     <string name="meta_ai_remembered">Ricordato · %1$s</string>
@@ -410,7 +410,7 @@
     <string name="settings_how_drive">Scritta nell\'archivio degli occhiali, %1$s</string>
     <string name="settings_how_nothing">Nessuna tabella la nomina</string>
     <string name="settings_mapping">Mappatura: affidabilità %1$s</string>
-    <string name="settings_never_written">Visor non la scrive mai.</string>
+    <string name="settings_never_written">Django non la scrive mai.</string>
     <string name="settings_no_way_to_write">Gli occhiali non danno modo di scriverla.</string>
     <string name="settings_in_phone_settings">Nelle impostazioni del telefono</string>
     <string name="settings_flags">Feature flag</string>
@@ -446,7 +446,7 @@
     <string name="settings_kit_client_name">Nome</string>
     <string name="settings_kit_client_create">Crea</string>
     <string name="settings_kit_client_token">Token per %1$s</string>
-    <string name="settings_kit_client_token_once">Copialo ora: Visor lo mostra una volta sola.</string>
+    <string name="settings_kit_client_token_once">Copialo ora: Django lo mostra una volta sola.</string>
     <string name="settings_kit_client_webhook">URL del webhook (facoltativo)</string>
     <string name="settings_kit_client_posts">invia a %1$s</string>
     <string name="kit_consent_title">Consentire a %1$s di usare i tuoi occhiali?</string>
@@ -458,11 +458,11 @@
     <string name="kit_scope_band">Leggere i gesti del Neural Band e farlo vibrare</string>
     <string name="kit_scope_display">Mostrare testo sul Display</string>
     <string name="kit_scope_name_state">Stato</string>
-    <string name="kit_scope_pairs">Vedere tutti i tuoi occhiali configurati in Visor, con nomi e aspetto, e scegliere a quale paio si collega Visor</string>
+    <string name="kit_scope_pairs">Vedere tutti i tuoi occhiali configurati in Django, con nomi e aspetto, e scegliere a quale paio si collega Django</string>
     <string name="kit_scope_name_inputs">Tocchi e tasti</string>
     <string name="kit_scope_inputs">Sapere quando tocchi o scorri il touchpad o premi un tasto dei tuoi occhiali</string>
     <string name="kit_scope_name_microphone">Microfono</string>
-    <string name="kit_scope_microphone">Trasformare in testo ciò che sentono i microfoni dei tuoi occhiali, mentre l\'app o Visor è sullo schermo</string>
+    <string name="kit_scope_microphone">Trasformare in testo ciò che sentono i microfoni dei tuoi occhiali, mentre l\'app o Django è sullo schermo</string>
     <string name="kit_scope_name_pairs">I tuoi occhiali</string>
     <string name="kit_scope_name_camera">Fotocamera</string>
     <string name="kit_scope_name_band">Neural Band</string>
@@ -493,7 +493,7 @@
     <string name="tile_partly">Attivo in parte</string>
     <string name="tile_refused">Rifiutato</string>
     <string name="settings_notifications">Notifiche sugli occhiali</string>
-    <string name="settings_notifications_sub">Le notifiche del telefono, mandate agli occhiali. Spento, Visor non ne manda nessuna.</string>
+    <string name="settings_notifications_sub">Le notifiche del telefono, mandate agli occhiali. Spento, Django non ne manda nessuna.</string>
 
     <string name="topic_meta_ai">Meta AI</string>
     <string name="topic_language">Lingua e voce</string>
@@ -593,7 +593,7 @@
     <string name="glasses_set_up_new">Configura altri occhiali</string>
     <string name="glasses_forget">Dimentica questi occhiali</string>
     <string name="glasses_forget_title">Dimenticare questi occhiali?</string>
-    <string name="glasses_forget_text">Visor si scollega e scarta la loro chiave. Per usarli, configurali di nuovo.</string>
+    <string name="glasses_forget_text">Django si scollega e scarta la loro chiave. Per usarli, configurali di nuovo.</string>
 
     <string name="ai_answer">Rispondi con il tuo modello</string>
     <string name="ai_answer_sub">Spento, l\'assistente degli occhiali non ha un telefono dietro.</string>
@@ -606,7 +606,7 @@
     <string name="ai_provider_chatgpt_sub">Il tuo piano Plus o Pro</string>
     <string name="ai_provider_openai_sub">Chiave API</string>
     <string name="ai_get_key">Ottieni una chiave</string>
-    <string name="ai_chatgpt_not_shared">Piano non condiviso con Visor</string>
+    <string name="ai_chatgpt_not_shared">Piano non condiviso con Django</string>
     <string name="ai_pick_model">Scegli un modello</string>
     <string name="ai_see_limits">Vedi i limiti</string>
     <string name="ai_add_credit">Aggiungi credito</string>
@@ -625,7 +625,7 @@
     <string name="ai_chatgpt_plan_text">L\'utilizzo idoneo in questa app usa il tuo piano ChatGPT. Gestisci l\'utilizzo nelle impostazioni di ChatGPT.</string>
     <string name="ai_chatgpt_got_it">Ho capito</string>
     <string name="ai_chatgpt_declined">Accesso annullato</string>
-    <string name="ai_chatgpt_not_eligible">ChatGPT non condivide il tuo piano con Visor. Nelle impostazioni di ChatGPT, in Utilizzo, consenti a Visor di usare il piano, poi riprova.</string>
+    <string name="ai_chatgpt_not_eligible">ChatGPT non condivide il tuo piano con Django. Nelle impostazioni di ChatGPT, in Utilizzo, consenti a questa app di usare il piano, poi riprova.</string>
     <string name="ai_chatgpt_expired">Disconnesso: accedi di nuovo</string>
     <string name="ai_chatgpt_failed">Accesso non riuscito: %1$s</string>
     <string name="ai_web_unavailable">Questo modello non può cercare sul web</string>
@@ -720,16 +720,16 @@
     <string name="access_calendar">Calendario</string>
     <string name="access_calendar_why">Così Meta AI può dirti cosa hai in calendario.</string>
     <string name="access_location_always">Posizione, sempre</string>
-    <string name="access_location_always_why">Così il luogo viene annotato anche con Visor chiusa. Scegli “Consenti sempre”.</string>
+    <string name="access_location_always_why">Così il luogo viene annotato anche con Django chiusa. Scegli “Consenti sempre”.</string>
     <string name="access_wifi">Wi-Fi nelle vicinanze</string>
     <string name="access_wifi_why">Per le importazioni e la visione live via Wi-Fi Direct.</string>
     <string name="access_companion">Dispositivo associato</string>
-    <string name="access_companion_why">Così l\'assistente può aprire indicazioni e musica sul telefono anche con Visor in background.</string>
+    <string name="access_companion_why">Così l\'assistente può aprire indicazioni e musica sul telefono anche con Django in background.</string>
     <string name="texts_photo">Foto</string>
     <string name="texts_video">Video</string>
     <string name="texts_attachment">Allegato</string>
     <string name="texts_refused_title">SMS non consentiti</string>
-    <string name="texts_refused">Consenti gli SMS a Visor sul telefono.</string>
+    <string name="texts_refused">Consenti gli SMS a Django sul telefono.</string>
 
     <string name="advanced_title">Impostazioni avanzate</string>
     <string name="advanced_read_again">Rileggi</string>
@@ -772,7 +772,7 @@
     <string name="adv_increase">Aumenta</string>
     <string name="adv_value_n">Valore %1$s</string>
     <string name="adv_stored_as">Salvato come %1$d</string>
-    <string name="adv_unreadable">Gli occhiali hanno un valore che Visor non sa leggere.</string>
+    <string name="adv_unreadable">Gli occhiali hanno un valore che Django non sa leggere.</string>
     <string name="adv_not_mapped">La sua struttura non è mappata.</string>
     <string name="adv_entry_unreadable">Illeggibile, lasciata com\'è</string>
     <plurals name="adv_unknown_fields">
@@ -801,17 +801,17 @@
     <string name="backup_restore">Ripristina</string>
     <string name="backup_restored">Ripristinato</string>
     <string name="backup_restoring">Scrivo sugli occhiali: %1$d di %2$d</string>
-    <string name="backup_not_ours">Quel file non è un backup di Visor</string>
+    <string name="backup_not_ours">Quel file non è un backup di Django</string>
     <string name="backup_save_failed">Impossibile salvare il file</string>
     <string name="backup_restore_failed">Ripristino non riuscito</string>
     <plurals name="backup_settings_not_restored">
         <item quantity="one">%1$d impostazione degli occhiali non ripristinata</item>
         <item quantity="other">%1$d impostazioni degli occhiali non ripristinate</item>
     </plurals>
-    <string name="backup_visor_only">Solo Visor</string>
+    <string name="backup_visor_only">Solo Django</string>
     <string name="backup_restore_title">Ripristinare il backup del %1$s?</string>
-    <string name="backup_restore_text">Le impostazioni di Visor e %1$d sugli occhiali.</string>
-    <string name="backup_restore_away">Solo le impostazioni di Visor. Collega gli occhiali e ripristina di nuovo per le loro %1$d.</string>
+    <string name="backup_restore_text">Le impostazioni di Django e %1$d sugli occhiali.</string>
+    <string name="backup_restore_away">Solo le impostazioni di Django. Collega gli occhiali e ripristina di nuovo per le loro %1$d.</string>
 
     <string name="about_title">Informazioni</string>
     <string name="about_debug">Build di debug</string>
@@ -819,13 +819,13 @@
     <string name="about_report">Segnala un problema</string>
     <string name="about_discuss">Apri una discussione</string>
     <string name="about_star">Lascia una stella</string>
-    <string name="star_title">Ti piace Visor?</string>
+    <string name="star_title">Ti piace Django?</string>
     <string name="star_ok">Metti una stella su GitHub</string>
     <string name="star_no">Più tardi</string>
     <string name="star_never">Non mostrare più</string>
-    <string name="about_sum_update">Visor %1$s, disponibile la %2$s</string>
+    <string name="about_sum_update">Django %1$s, disponibile la %2$s</string>
     <string name="update_channel">Aggiornamenti</string>
-    <string name="update_ready">Visor %1$s è disponibile</string>
+    <string name="update_ready">Django %1$s è disponibile</string>
     <string name="update_ready_text">Scaricalo da GitHub</string>
     <string name="update_look">Cerca aggiornamenti</string>
 
@@ -835,11 +835,11 @@
     <string name="event_log_clear_title">Svuotare il registro?</string>
     <string name="event_log_empty">Non è ancora successo niente</string>
     <string name="event_log_bug_report">Scarica un bug report dagli occhiali</string>
-    <string name="bug_report_asked">Bug report in arrivo in Download/Visor</string>
+    <string name="bug_report_asked">Bug report in arrivo in Download/Django</string>
 
     <!-- Onboarding -->
     <string name="onboard_begin">Inizia</string>
-    <string name="onboard_access_title">Cosa chiede Visor</string>
+    <string name="onboard_access_title">Cosa chiede Django</string>
     <string name="onboard_skip">Non ora</string>
     <string name="onboard_continue">Continua</string>
     <string name="onboard_needed">Necessario</string>
@@ -872,7 +872,7 @@
     <string name="onboard_keep_close">Tienili vicino al telefono.</string>
     <string name="onboard_ready">Pronti.</string>
     <string name="onboard_ready_sub">Ora %1$s appartengono a questo telefono.</string>
-    <string name="onboard_open">Apri Visor</string>
+    <string name="onboard_open">Apri Django</string>
     <string name="onboard_failed">Non configurati</string>
     <string name="onboard_wrong_owner">Questi occhiali appartengono a un altro account Meta. Accedi con quello che li ha configurati nell\'app Meta AI, oppure ripristina gli occhiali.</string>
     <string name="onboard_stopped_at">Interrotto al passo: %1$s</string>
@@ -968,7 +968,7 @@
     <string name="features_refused">Gli occhiali hanno tenuto il valore di prima. Riprova.</string>
     <string name="features_restart_title">Riavvia gli occhiali</string>
     <string name="features_how">Come si usa</string>
-    <string name="features_changes">Cosa cambia Visor</string>
+    <string name="features_changes">Cosa cambia Django</string>
     <string name="features_turn_on">Attiva</string>
     <string name="features_turn_off">Disattiva</string>
     <string name="feature_cf">Focus conversazione</string>
@@ -1177,7 +1177,7 @@
     <string name="toolkit_channel">Configurazione degli occhiali per le app</string>
     <string name="toolkit_notification">Configurazione degli occhiali per le app</string>
     <string name="toolkit_title">Permettere alle app di usare lo schermo degli occhiali?</string>
-    <string name="toolkit_body">%1$s vuole mostrare contenuti sullo schermo degli occhiali. Visor prepara gli occhiali una volta sola.</string>
+    <string name="toolkit_body">%1$s vuole mostrare contenuti sullo schermo degli occhiali. Django prepara gli occhiali una volta sola.</string>
     <string name="toolkit_allow">Configura</string>
     <string name="toolkit_deny">Non ora</string>
     <string name="toolkit_ready">Gli occhiali sono pronti</string>
@@ -1185,12 +1185,12 @@
     <string name="toolkit_close">Chiudi</string>
     <string name="toolkit_step_key">Controllo degli occhiali</string>
     <string name="toolkit_step_app">Installazione dell\'app del toolkit di Meta</string>
-    <string name="toolkit_step_manifest">Aggiunta di Visor agli occhiali</string>
+    <string name="toolkit_step_manifest">Aggiunta di Django agli occhiali</string>
     <string name="toolkit_step_permissions">Autorizzazioni del toolkit</string>
     <string name="kit_scope_name_motion">Movimento</string>
     <string name="kit_scope_motion">Leggere come si muovono e girano gli occhiali e il Neural Band, più volte al secondo, dai loro sensori di movimento.</string>
     <string name="toolkit_point_app">Installa sugli occhiali l\'app del toolkit di Meta</string>
-    <string name="toolkit_point_trust">Aggiunge Visor ai dispositivi di cui gli occhiali si fidano</string>
+    <string name="toolkit_point_trust">Aggiunge Django ai dispositivi di cui gli occhiali si fidano</string>
     <string name="toolkit_point_once">Una volta per ogni paio di occhiali</string>
     <string name="toolkit_background">Puoi chiudere questa schermata. La configurazione continua e la notifica ne mostra l\'avanzamento.</string>
     <string name="toolkit_ready_sub">Ora le app possono usare lo schermo e il movimento degli occhiali.</string>

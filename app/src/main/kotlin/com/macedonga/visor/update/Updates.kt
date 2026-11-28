@@ -28,7 +28,7 @@ import org.json.JSONObject
 /** A release on GitHub, and where its APK downloads from. */
 data class Release(val version: String, val url: String)
 
-/** Asks GitHub for the latest release twice a day while Visor runs, and tells once about each newer one. */
+/** Asks GitHub for the latest release twice a day while Django runs, and tells once about each newer one. */
 @Singleton
 class Updates @Inject constructor(@ApplicationContext private val context: Context) {
     private val prefs = context.getSharedPreferences("updates", Context.MODE_PRIVATE)
@@ -83,7 +83,7 @@ class Updates @Inject constructor(@ApplicationContext private val context: Conte
             http.connectTimeout = 10_000
             http.readTimeout = 10_000
             http.setRequestProperty("Accept", "application/vnd.github+json")
-            http.setRequestProperty("User-Agent", "Visor")
+            http.setRequestProperty("User-Agent", "Django")
             if (http.responseCode != 200) return null
             val json = JSONObject(http.inputStream.use { it.readBytes().decodeToString() })
             val assets = json.optJSONArray("assets")
@@ -101,7 +101,7 @@ class Updates @Inject constructor(@ApplicationContext private val context: Conte
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val download = PendingIntent.getActivity(context, 2, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_visor)
+            .setSmallIcon(R.drawable.ic_stat_django)
             .setContentTitle(context.getString(R.string.update_ready, release.version))
             .setContentText(context.getString(R.string.update_ready_text))
             .setContentIntent(download)

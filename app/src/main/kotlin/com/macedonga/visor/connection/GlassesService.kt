@@ -291,7 +291,7 @@ class GlassesService : Service() {
         val builder = Notification.Builder(this, LIVE_CHANNEL_ID)
             .setContentTitle(getString(R.string.live_notification_title))
             .setContentText(getString(now.label))
-            .setSmallIcon(R.drawable.ic_stat_visor)
+            .setSmallIcon(R.drawable.ic_stat_django)
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_STATUS)
             .setContentIntent(PendingIntent.getActivity(this, 4, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
@@ -332,7 +332,7 @@ class GlassesService : Service() {
             .setShowWhen(false)
             .setStyle(Notification.DecoratedCustomViewStyle())
             .setCustomContentView(statusViews(status))
-            .setSmallIcon(R.drawable.ic_stat_visor)
+            .setSmallIcon(R.drawable.ic_stat_django)
             .setOngoing(true)
             .setContentIntent(
                 PendingIntent.getActivity(

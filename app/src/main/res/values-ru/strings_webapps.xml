@@ -7,11 +7,11 @@
     <string name="webapps_url">Адрес (https)</string>
     <string name="webapps_bluetooth">Bluetooth-устройства рядом</string>
     <string name="webapps_bluetooth_failed">Не удалось изменить: %1$s</string>
-    <string name="webapps_access">Доступ к Visor</string>
+    <string name="webapps_access">Доступ к Django</string>
     <string name="webapps_saving_read">Чтение конфигурации очков. Это происходит один раз и может занять минуту.</string>
     <string name="webapps_saving_send">Сохранение на очках…</string>
     <string name="webapps_summary_bluetooth">Bluetooth</string>
-    <string name="webapps_summary_visor">Visor: %1$s</string>
+    <string name="webapps_summary_visor">Django: %1$s</string>
     <string name="webapps_tools">Инструменты веб-приложений для ассистента</string>
     <string name="webapps_tools_sub">Веб-приложение, открытое на очках, может дать ассистенту свои инструменты, например добавить что-то в свой список. Изменение записывает конфигурацию очков.</string>
     <string name="webapps_on_glasses">На очках</string>

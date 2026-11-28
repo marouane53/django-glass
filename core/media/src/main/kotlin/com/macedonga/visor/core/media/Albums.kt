@@ -3,6 +3,7 @@ package com.macedonga.visor.core.media
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import kotlinx.coroutines.CoroutineScope
@@ -21,10 +22,18 @@ import kotlinx.coroutines.launch
 /**
  * The albums imports go in: a folder under Pictures/ for photos and one under Movies/ for videos, or with [together]
  * one folder under DCIM/, named as the photos album; DCIM is the one top folder that takes photos and videos alike.
- * The gallery shows a folder as an album. A change moves everything Visor saved, so the app never loses sight of it.
+ * The gallery shows a folder as an album. Changing an album moves the captures to the selected folder.
  */
 class Albums(private val context: Context) {
-    private val prefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE).also { prefs ->
+        if (!prefs.getBoolean(DEFAULTS_UPDATED, false)) {
+            val edit = prefs.edit()
+            for (key in listOf(PHOTOS, VIDEOS)) {
+                if (prefs.getString(key, null) == LEGACY_DEFAULT) edit.remove(key)
+            }
+            edit.putBoolean(DEFAULTS_UPDATED, true).apply()
+        }
+    }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     // Moves run one after another in the order asked: each starts from where the last one left the files.
     private val moves = Channel<Move>(Channel.UNLIMITED)
@@ -54,7 +63,10 @@ class Albums(private val context: Context) {
         scope.launch {
             for (move in moves) {
                 try {
-                    move.from.forEach { move("$it/", "${move.toPhotos}/", "${move.toVideos}/") }
+                    val toPhotos = "${move.toPhotos}/"
+                    val toVideos = "${move.toVideos}/"
+                    move.from.forEach { move("$it/", toPhotos, toVideos) }
+                    (LEGACY_PATHS - move.from).forEach { move("$it/", toPhotos, toVideos, ownedOnly = true) }
                 } finally {
                     _moving.update { it - 1 }
                 }
@@ -77,11 +89,18 @@ class Albums(private val context: Context) {
     /** Where either lands: [video] picks the folder. */
     fun path(video: Boolean): String = if (video) videosPath() else photosPath()
 
-    /** Everything in the photos album, as a pattern for [MATCH]. */
-    fun photosPattern(): String = pattern("${photosPath()}/")
-
-    /** Everything in the videos album, as a pattern for [MATCH]. */
-    fun videosPattern(): String = pattern("${videosPath()}/")
+    /** The selected album plus captures Django saved to its previous default folders. */
+    fun query(collection: Uri, columns: Array<String>, video: Boolean, sortOrder: String? = null): Cursor? {
+        val root = if (video) MOVIES else PICTURES
+        val selection = "$MATCH OR ($OWNED AND ($MATCH OR $MATCH))"
+        val args = arrayOf(
+            pattern("${path(video)}/"),
+            context.packageName,
+            pattern("$root/$LEGACY_DEFAULT/"),
+            pattern("$DCIM/$LEGACY_DEFAULT/"),
+        )
+        return context.contentResolver.query(collection, columns, selection, args, sortOrder)
+    }
 
     /**
      * A file saved under [path] that was still being written when the album changed: the move did not see it, so it
@@ -120,9 +139,11 @@ class Albums(private val context: Context) {
         }
     }
 
-    /** Every photo and video Visor saved under [from], into its kind's folder with the same name and any folder below kept. */
-    private fun move(from: String, toPhotos: String, toVideos: String) {
+    /** Move captures from [from] to the new albums, preserving any subfolder. */
+    private fun move(from: String, toPhotos: String, toVideos: String, ownedOnly: Boolean = false) {
         val resolver = context.contentResolver
+        val selection = if (ownedOnly) "$MATCH AND $OWNED" else MATCH
+        val args = if (ownedOnly) arrayOf(pattern(from), context.packageName) else arrayOf(pattern(from))
         var moved = 0
         var failed = 0
         for ((collection, video) in COLLECTIONS) {
@@ -130,7 +151,7 @@ class Albums(private val context: Context) {
             if (to == from) continue
             val rows = ArrayList<Pair<Long, String>>()
             runCatching {
-                resolver.query(collection, COLUMNS, MATCH, arrayOf(pattern(from)), null)?.use { c ->
+                resolver.query(collection, COLUMNS, selection, args, null)?.use { c ->
                     while (c.moveToNext()) rows += c.getLong(0) to c.getString(1)
                 }
             }.onFailure { note("Could not list $from: ${it.message}") }
@@ -152,16 +173,19 @@ class Albums(private val context: Context) {
 
     companion object {
         /** The album an empty setting means. */
-        const val DEFAULT = "Visor"
+        const val DEFAULT = "Django"
+        private const val LEGACY_DEFAULT = "Visor"
 
         private const val PHOTOS = "photos"
         private const val VIDEOS = "videos"
         private const val TOGETHER = "together"
+        private const val DEFAULTS_UPDATED = "django_defaults"
         private const val PICTURES = "Pictures"
         private const val MOVIES = "Movies"
         private const val DCIM = "DCIM"
         private const val ESCAPE = '\\'
         private const val MAX_NAME = 80
+        private val LEGACY_PATHS = setOf("$PICTURES/$LEGACY_DEFAULT", "$MOVIES/$LEGACY_DEFAULT", "$DCIM/$LEGACY_DEFAULT")
 
         private val COLLECTIONS = listOf(
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) to false,
@@ -172,8 +196,9 @@ class Albums(private val context: Context) {
         // MediaStore turns these into '_' in a folder name; doing it first keeps the name the one it stores.
         private val NOT_IN_NAMES = Regex("[\\u0000-\\u001f\\u007f\"*:<>?|]")
 
-        /** The selection for [photosPattern] and [videosPattern]: the escape keeps a wildcard in an album name a letter. */
-        val MATCH = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? ESCAPE '$ESCAPE'"
+        // The escape keeps a wildcard in an album name a letter.
+        private val MATCH = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? ESCAPE '$ESCAPE'"
+        private const val OWNED = "${MediaStore.MediaColumns.OWNER_PACKAGE_NAME} = ?"
 
         /** A folder the gallery takes: never empty, one level, nothing hidden, no characters MediaStore would change. */
         fun folder(raw: String?): String = raw.orEmpty()

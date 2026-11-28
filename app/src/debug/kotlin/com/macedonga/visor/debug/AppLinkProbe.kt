@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
- * Debug only: a link of Visor's own to the Display under its app key, trusted on svc79 against the constellation
+ * Debug only: a link of Django's own to the Display under its app key, trusted on svc79 against the constellation
  * manifest as Meta's toolkit's links are, and a toolkit session on it (svc7009, then the toolkit app on svc6500).
  * Every step goes to the event log as "AppLink:".
  */
@@ -57,7 +57,7 @@ internal object AppLinkProbe {
                         log.add("AppLink: link ${event.state} ${event.reason}".trim())
                         if (event.state == LinkState.READY) {
                             log.add("AppLink: trust ${opened.trustResult}")
-                            send(Dat.SESSION_SERVICE, Dat.SESSION_START_REQUEST, Dat.sessionStart("com.macedonga.visor", UUID.randomUUID().toString(), "Visor", "1.0.1", dam))
+                            send(Dat.SESSION_SERVICE, Dat.SESSION_START_REQUEST, Dat.sessionStart("com.macedonga.visor", UUID.randomUUID().toString(), "Django", "1.0.1", dam))
                         }
                     }
                     is ProtocolError -> log.add("AppLink: ${event.detail}")

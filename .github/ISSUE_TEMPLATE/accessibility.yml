@@ -1,5 +1,5 @@
 name: Accessibility problem
-description: Something in Django Glass does not work with TalkBack, large text or another accessibility setting.
+description: Something in Django does not work with TalkBack, large text or another accessibility setting.
 labels: [accessibility]
 body:
   - type: markdown
@@ -43,7 +43,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Django Glass version
+      label: Django version
       description: Settings, About.
     validations:
       required: true

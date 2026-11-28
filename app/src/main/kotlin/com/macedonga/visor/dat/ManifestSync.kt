@@ -19,8 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Keeps the glasses on the manifest Visor signed, as the Meta app's ManifestManager does on every connection: the
- * glasses' key salt is read (GET_MANIFEST_VERSION) and, when it is not the salt of Visor's manifest, the authority key
+ * Keeps the glasses on the manifest Django signed, as the Meta app's ManifestManager does on every connection: the
+ * glasses' key salt is read (GET_MANIFEST_VERSION) and, when it is not the salt of Django's manifest, the authority key
  * and the manifest go again. Glasses that missed a setup, or were given another manifest, catch up when they connect.
  */
 @Singleton
@@ -44,7 +44,7 @@ class ManifestSync @Inject constructor(
         val manifest = pair.manifest ?: return
         val held = version()
         if (held != null && held.salt.contentEquals(pair.salt)) return
-        log.add("Manifest: the glasses hold ${held?.version ?: "an unreadable one"}, Visor's is ${pair.version}; sending it")
+        log.add("Manifest: the glasses hold ${held?.version ?: "an unreadable one"}, Django's is ${pair.version}; sending it")
         val now = install(pair.authorityPublic, manifest)
         log.add(if (now?.salt?.contentEquals(pair.salt) == true) "Manifest: the glasses took ${now.version}" else "Manifest: the glasses still hold ${now?.version}")
     }

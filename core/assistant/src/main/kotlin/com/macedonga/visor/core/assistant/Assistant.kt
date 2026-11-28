@@ -710,7 +710,7 @@ class Assistant(
             }
             announceSession(mux, m0)
             setPhase(l, AssistantPhase.LISTENING)
-            say("Registered as the glasses' assistant (protocol ${l.protocol}): \"Hey Meta\" now comes to Visor")
+            say("Registered as the glasses' assistant (protocol ${l.protocol}): \"Hey Meta\" now comes to Django")
         } catch (cancelled: CancellationException) {
             // The session went away while registering, such as a Wi-Fi one ending: not a failure.
             throw cancelled
@@ -756,7 +756,7 @@ class Assistant(
             MT_RUNNING_LOCALE -> {
                 l.glassesLocale = parseLocale(payload)
                 say("The glasses' assistant speaks ${l.glassesLocale.getDisplayName(Locale.ENGLISH)}" +
-                    if (l.foreign) "; Visor hears and answers in ${l.locale.getDisplayName(Locale.ENGLISH)}" else "")
+                    if (l.foreign) "; Django hears and answers in ${l.locale.getDisplayName(Locale.ENGLISH)}" else "")
                 speechPrefs.edit().putString("language", l.glassesLocale.toLanguageTag()).apply()
                 prepareSpeech(spoken(l))
             }
@@ -1250,7 +1250,7 @@ class Assistant(
             "IN:START_LIVE_AI" -> say("Live AI asked for; the glasses start it themselves")
             // "Hey Meta" and nothing after it: the glasses close the turn at once.
             "IN:WAKE_WORD" -> Unit
-            // Meta's server answers these with an action Visor cannot write; the phone starts and stops it itself.
+            // Meta's server answers these with an action Django cannot write; the phone starts and stops it itself.
             "IN:START_CONVERSATION_FOCUS", "IN:STOP_CONVERSATION_FOCUS", "IN:PAUSE_CONVERSATION_FOCUS", "IN:RESUME_CONVERSATION_FOCUS" -> {
                 say("Conversation focus: $intent")
                 when (intent) {
@@ -1347,7 +1347,7 @@ class Assistant(
     }
 
     /**
-     * The glasses' own descriptions of [names] (MCP tools/list over ev311), for tools Visor does not know, such as a
+     * The glasses' own descriptions of [names] (MCP tools/list over ev311), for tools Django does not know, such as a
      * web app's: asked once a link and kept, and not again for a minute after an ask they did not answer.
      */
     private suspend fun describeTools(l: Link, names: List<String>): Map<String, ToolDescription> {
@@ -2197,7 +2197,7 @@ class Assistant(
     private fun pastOf(id: String): List<Exchange> {
         val conversation = diary.turn(id)?.conversation ?: return emptyList()
         return diary.past(conversation, before = id).map {
-            // A silent camera turn keeps the actions' names as its diary answer; the model gets only Visor's note of them.
+            // A silent camera turn keeps the actions' names as its diary answer; the model gets only Django's note of them.
             Exchange(it.question, if (it.onlyActed) "" else it.answer, it.actions)
         }
     }
@@ -2215,34 +2215,34 @@ class Assistant(
     private companion object {
         // What the glasses say when there is no model, and when the model fails, in each language the wearer can speak.
         val FALLBACKS = mapOf(
-            "en" to ("Visor is connected, but no AI model is set up yet. Add an API key in the app." to "Sorry, I couldn't get an answer."),
-            "it" to ("Visor è collegato, ma non c'è ancora un modello. Aggiungi una chiave API nell'app." to "Scusa, non sono riuscito a ottenere una risposta."),
-            "es" to ("Visor está conectado, pero aún no hay ningún modelo configurado. Añade una clave de API en la app." to "Lo siento, no he podido obtener una respuesta."),
-            "fr" to ("Visor est connecté, mais aucun modèle n'est encore configuré. Ajoutez une clé API dans l'application." to "Désolé, je n'ai pas pu obtenir de réponse."),
-            "de" to ("Visor ist verbunden, aber es ist noch kein Modell eingerichtet. Füge in der App einen API-Schlüssel hinzu." to "Entschuldigung, ich konnte keine Antwort bekommen."),
-            "pt" to ("O Visor está conectado, mas ainda não há um modelo configurado. Adicione uma chave de API no app." to "Desculpe, não consegui obter uma resposta."),
-            "nl" to ("Visor is verbonden, maar er is nog geen model ingesteld. Voeg een API-sleutel toe in de app." to "Sorry, ik kon geen antwoord krijgen."),
-            "tr" to ("Visor bağlı, ancak henüz bir model ayarlanmadı. Uygulamada bir API anahtarı ekleyin." to "Üzgünüm, bir yanıt alamadım."),
-            "hi" to ("Visor कनेक्ट है, लेकिन अभी कोई मॉडल सेट नहीं है। ऐप में एक API कुंजी जोड़ें।" to "माफ़ कीजिए, मुझे जवाब नहीं मिल सका।"),
-            "ja" to ("Visorは接続されていますが、まだモデルが設定されていません。アプリでAPIキーを追加してください。" to "すみません、回答を取得できませんでした。"),
-            "ko" to ("Visor가 연결되었지만 아직 모델이 설정되지 않았습니다. 앱에서 API 키를 추가하세요." to "죄송합니다. 답변을 받지 못했습니다."),
-            "zh" to ("Visor 已连接，但还没有设置模型。请在应用中添加 API 密钥。" to "抱歉，我没能获得回答。"),
-            "vi" to ("Visor đã kết nối, nhưng chưa có model AI. Hãy thêm API key trong ứng dụng." to "Xin lỗi, tôi không lấy được câu trả lời."),
-            "ru" to ("Visor подключён, но модель ИИ ещё не настроена. Добавьте ключ API в приложении." to "Извините, не удалось получить ответ."),
-            "uk" to ("Visor підключено, але модель ШІ ще не налаштовано. Додайте ключ API в застосунку." to "Вибачте, не вдалося отримати відповідь."),
-            "pl" to ("Visor jest połączony, ale nie ma jeszcze skonfigurowanego modelu AI. Dodaj klucz API w aplikacji." to "Przepraszam, nie udało mi się uzyskać odpowiedzi."),
-            "cs" to ("Visor je připojený, ale zatím není nastavený žádný model AI. Přidejte klíč API v aplikaci." to "Promiňte, nepodařilo se mi získat odpověď."),
-            "ro" to ("Visor este conectat, dar încă nu este configurat niciun model AI. Adaugă o cheie API în aplicație." to "Îmi pare rău, nu am putut obține un răspuns."),
-            "hu" to ("A Visor csatlakoztatva van, de még nincs beállítva AI-modell. Adj hozzá egy API-kulcsot az alkalmazásban." to "Sajnálom, nem sikerült választ kapnom."),
-            "el" to ("Το Visor είναι συνδεδεμένο, αλλά δεν έχει ρυθμιστεί ακόμα μοντέλο AI. Προσθέστε ένα κλειδί API στην εφαρμογή." to "Συγγνώμη, δεν μπόρεσα να λάβω απάντηση."),
-            "sv" to ("Visor är anslutet, men ingen AI-modell är inställd ännu. Lägg till en API-nyckel i appen." to "Tyvärr, jag kunde inte få något svar."),
-            "da" to ("Visor er forbundet, men der er endnu ikke sat nogen AI-model op. Tilføj en API-nøgle i appen." to "Beklager, jeg kunne ikke få et svar."),
-            "nb" to ("Visor er tilkoblet, men ingen AI-modell er satt opp ennå. Legg til en API-nøkkel i appen." to "Beklager, jeg fikk ikke noe svar."),
-            "fi" to ("Visor on yhdistetty, mutta tekoälymallia ei ole vielä määritetty. Lisää API-avain sovelluksessa." to "Valitettavasti en saanut vastausta."),
-            "he" to ("Visor מחובר, אבל עדיין לא הוגדר מודל AI. יש להוסיף מפתח API באפליקציה." to "סליחה, לא הצלחתי לקבל תשובה."),
-            "ar" to ("Visor متصل، لكن لم يتم إعداد نموذج ذكاء اصطناعي بعد. أضف مفتاح API في التطبيق." to "عذرًا، لم أتمكن من الحصول على إجابة."),
-            "id" to ("Visor sudah terhubung, tetapi belum ada model AI yang disiapkan. Tambahkan kunci API di aplikasi." to "Maaf, saya tidak bisa mendapatkan jawaban."),
-            "th" to ("Visor เชื่อมต่อแล้ว แต่ยังไม่ได้ตั้งค่าโมเดล AI โปรดเพิ่มคีย์ API ในแอป" to "ขออภัย ไม่สามารถรับคำตอบได้"),
+            "en" to ("Django is connected, but no AI model is set up yet. Add an API key in the app." to "Sorry, I couldn't get an answer."),
+            "it" to ("Django è collegato, ma non c'è ancora un modello. Aggiungi una chiave API nell'app." to "Scusa, non sono riuscito a ottenere una risposta."),
+            "es" to ("Django está conectado, pero aún no hay ningún modelo configurado. Añade una clave de API en la app." to "Lo siento, no he podido obtener una respuesta."),
+            "fr" to ("Django est connecté, mais aucun modèle n'est encore configuré. Ajoutez une clé API dans l'application." to "Désolé, je n'ai pas pu obtenir de réponse."),
+            "de" to ("Django ist verbunden, aber es ist noch kein Modell eingerichtet. Füge in der App einen API-Schlüssel hinzu." to "Entschuldigung, ich konnte keine Antwort bekommen."),
+            "pt" to ("O Django está conectado, mas ainda não há um modelo configurado. Adicione uma chave de API no app." to "Desculpe, não consegui obter uma resposta."),
+            "nl" to ("Django is verbonden, maar er is nog geen model ingesteld. Voeg een API-sleutel toe in de app." to "Sorry, ik kon geen antwoord krijgen."),
+            "tr" to ("Django bağlı, ancak henüz bir model ayarlanmadı. Uygulamada bir API anahtarı ekleyin." to "Üzgünüm, bir yanıt alamadım."),
+            "hi" to ("Django कनेक्ट है, लेकिन अभी कोई मॉडल सेट नहीं है। ऐप में एक API कुंजी जोड़ें।" to "माफ़ कीजिए, मुझे जवाब नहीं मिल सका।"),
+            "ja" to ("Djangoは接続されていますが、まだモデルが設定されていません。アプリでAPIキーを追加してください。" to "すみません、回答を取得できませんでした。"),
+            "ko" to ("Django가 연결되었지만 아직 모델이 설정되지 않았습니다. 앱에서 API 키를 추가하세요." to "죄송합니다. 답변을 받지 못했습니다."),
+            "zh" to ("Django 已连接，但还没有设置模型。请在应用中添加 API 密钥。" to "抱歉，我没能获得回答。"),
+            "vi" to ("Django đã kết nối, nhưng chưa có model AI. Hãy thêm API key trong ứng dụng." to "Xin lỗi, tôi không lấy được câu trả lời."),
+            "ru" to ("Django подключён, но модель ИИ ещё не настроена. Добавьте ключ API в приложении." to "Извините, не удалось получить ответ."),
+            "uk" to ("Django підключено, але модель ШІ ще не налаштовано. Додайте ключ API в застосунку." to "Вибачте, не вдалося отримати відповідь."),
+            "pl" to ("Django jest połączony, ale nie ma jeszcze skonfigurowanego modelu AI. Dodaj klucz API w aplikacji." to "Przepraszam, nie udało mi się uzyskać odpowiedzi."),
+            "cs" to ("Django je připojený, ale zatím není nastavený žádný model AI. Přidejte klíč API v aplikaci." to "Promiňte, nepodařilo se mi získat odpověď."),
+            "ro" to ("Django este conectat, dar încă nu este configurat niciun model AI. Adaugă o cheie API în aplicație." to "Îmi pare rău, nu am putut obține un răspuns."),
+            "hu" to ("A Django csatlakoztatva van, de még nincs beállítva AI-modell. Adj hozzá egy API-kulcsot az alkalmazásban." to "Sajnálom, nem sikerült választ kapnom."),
+            "el" to ("Το Django είναι συνδεδεμένο, αλλά δεν έχει ρυθμιστεί ακόμα μοντέλο AI. Προσθέστε ένα κλειδί API στην εφαρμογή." to "Συγγνώμη, δεν μπόρεσα να λάβω απάντηση."),
+            "sv" to ("Django är anslutet, men ingen AI-modell är inställd ännu. Lägg till en API-nyckel i appen." to "Tyvärr, jag kunde inte få något svar."),
+            "da" to ("Django er forbundet, men der er endnu ikke sat nogen AI-model op. Tilføj en API-nøgle i appen." to "Beklager, jeg kunne ikke få et svar."),
+            "nb" to ("Django er tilkoblet, men ingen AI-modell er satt opp ennå. Legg til en API-nøkkel i appen." to "Beklager, jeg fikk ikke noe svar."),
+            "fi" to ("Django on yhdistetty, mutta tekoälymallia ei ole vielä määritetty. Lisää API-avain sovelluksessa." to "Valitettavasti en saanut vastausta."),
+            "he" to ("Django מחובר, אבל עדיין לא הוגדר מודל AI. יש להוסיף מפתח API באפליקציה." to "סליחה, לא הצלחתי לקבל תשובה."),
+            "ar" to ("Django متصل، لكن لم يتم إعداد نموذج ذكاء اصطناعي بعد. أضف مفتاح API في التطبيق." to "عذرًا، لم أتمكن من الحصول على إجابة."),
+            "id" to ("Django sudah terhubung, tetapi belum ada model AI yang disiapkan. Tambahkan kunci API di aplikasi." to "Maaf, saya tidak bisa mendapatkan jawaban."),
+            "th" to ("Django เชื่อมต่อแล้ว แต่ยังไม่ได้ตั้งค่าโมเดล AI โปรดเพิ่มคีย์ API ในแอป" to "ขออภัย ไม่สามารถรับคำตอบได้"),
         )
         const val FACTORY_PROCESSING_S = 20L
         const val DELIVERY_MS = 4_000L
@@ -2317,7 +2317,7 @@ class Assistant(
 /** What the glasses understand as giving up a reply. */
 private val CANCEL_INTENTS = setOf("IN:CANCEL", "IN:NEVER_MIND", "IN:STOP", "IN:NEGATE_INTENT", "IN:CANCEL_MESSAGE")
 
-/** The glasses' own device intents Visor hands back to them (ev380) on a Display: volume and brightness only. */
+/** The glasses' own device intents Django hands back to them (ev380) on a Display: volume and brightness only. */
 private val DEVICE_INTENTS = setOf(
     "IN:SET_VOLUME", "IN:INCREASE_VOLUME", "IN:DECREASE_VOLUME", "IN:MUTE_VOLUME", "IN:UNMUTE_VOLUME",
     "IN:SET_BRIGHTNESS", "IN:INCREASE_BRIGHTNESS", "IN:DECREASE_BRIGHTNESS", "IN:MAXIMIZE_BRIGHTNESS",
@@ -2380,7 +2380,7 @@ private fun describeRead(value: Any?): String {
 /** The problem of an answer that came after the glasses had closed its turn: kept, never spoken. */
 const val ANSWER_TOO_LATE = "too late for the glasses"
 
-/** The problem of a turn the glasses did themselves, with no answer from Visor. */
+/** The problem of a turn the glasses did themselves, with no answer from Django. */
 const val ON_GLASSES = "done on the glasses"
 
 /** An answer that ends on a question. */

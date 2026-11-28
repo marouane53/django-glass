@@ -17,7 +17,7 @@ import com.macedonga.visor.update.NEW_ISSUE_URL
 import com.macedonga.visor.update.REPO_URL
 import com.macedonga.visor.update.openLink
 
-/** What this is: Visor's version, the glasses' firmware, and the work it stands on. */
+/** Django's version, the glasses' firmware, and project credits. */
 @Composable
 fun AboutScreen(model: SettingsViewModel = hiltViewModel()) {
     val context = LocalContext.current
@@ -27,7 +27,7 @@ fun AboutScreen(model: SettingsViewModel = hiltViewModel()) {
     SettingsPage(stringResource(R.string.about_title), light = 0.35f) {
         item(key = "versions") {
             Rows(
-                { ValueRow("Django Glass", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", onClick = null, sub = if (BuildConfig.DEBUG) stringResource(R.string.about_debug) else null) },
+                { ValueRow(stringResource(R.string.app_name), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", onClick = null, sub = if (BuildConfig.DEBUG) stringResource(R.string.about_debug) else null) },
                 newer?.let { release ->
                     {
                         RowFrame(stringResource(R.string.update_ready, release.version), onClick = null) {

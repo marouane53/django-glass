@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.addView(layout); setContentView(scroll);
         TextView title = new TextView(this); title.setText("Glasses Speech"); title.setTextSize(26); layout.addView(title);
         TextView info = new TextView(this); info.setText("Gemini 3.8 Flash TTS · Finn\nGemini Flash-Lite or MAI-Transcribe-2 input\n\nGemini expects mostly English, plus French and Moroccan Darija, preserving language changes. Django selects this service directly.\n\nKeys are encrypted on this phone. The adapter only listens on 127.0.0.1:8766. Audio and transcripts are sent to the selected cloud speech provider, then discarded here."); layout.addView(info);
-        gemini = field(layout, "Gemini API key", "gemini"); mai = field(layout, "OpenRouter API key for MAI", "mai"); local = field(layout, "Local access key for Django Glass", "local");
+        gemini = field(layout, "Gemini API key", "gemini"); mai = field(layout, "OpenRouter API key for MAI", "mai"); local = field(layout, "Local access key for Django", "local");
         Button save = new Button(this); save.setText("Save and start"); layout.addView(save);
         status = new TextView(this); layout.addView(status);
         Button useMai = new Button(this); useMai.setText("Use MAI transcription"); layout.addView(useMai);

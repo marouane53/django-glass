@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
-/** Owns only a dot call explicitly requested through Django Glasses. No account credentials or call audio. */
+/** Owns only a dot call explicitly requested through Django. No account credentials or call audio. */
 @Singleton
 class DotCallController @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -165,7 +165,7 @@ class DotCallController @Inject constructor(
         manager.createNotificationChannel(NotificationChannel(CHANNEL, "Django dot calls", NotificationManager.IMPORTANCE_LOW))
         val end = PendingIntent.getBroadcast(context, ID, Intent(context, DotCallReceiver::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        manager.notify(ID, Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_stat_visor)
+        manager.notify(ID, Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_stat_django)
             .setContentTitle("Django dot call controls").setContentText("End the voice call; Django can keep working.")
             .setOngoing(true).addAction(Notification.Action.Builder(null, "End call", end).build()).build())
     }

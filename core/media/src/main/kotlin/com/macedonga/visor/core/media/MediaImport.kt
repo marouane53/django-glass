@@ -594,7 +594,7 @@ class MediaImport(
         }
     }
 
-    /** Gets each bug report zip before it goes to Download/Visor. */
+    /** Gets each bug report zip before it goes to Download/Django. */
     @Volatile
     var bugReportReader: ((File) -> Unit)? = null
 
@@ -606,7 +606,7 @@ class MediaImport(
     }
 
     /**
-     * Asks the glasses for a bug report on svc7006; the zip comes over airship to Download/Visor.
+     * Asks the glasses for a bug report on svc7006; the zip comes over airship to Download/Django.
      * [mode] is BugReportParams.mode (field 6.1), null for the glasses' default.
      */
     fun requestBugReport(mode: Int? = null) {
@@ -632,11 +632,11 @@ class MediaImport(
     }
 
     private fun keepBugReport(received: Received) {
-        val name = "Visor_bugreport_" + NAME.format(ZonedDateTime.now()) + ".zip"
+        val name = "Django_bugreport_" + NAME.format(ZonedDateTime.now()) + ".zip"
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "application/zip")
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/Visor")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/Django")
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
@@ -649,7 +649,7 @@ class MediaImport(
             resolver.delete(uri, null, null)
             throw error
         }
-        say("Saved the glasses' bug report, ${sizeWords(received.offer.size)}, to Download/Visor/$name" + if (received.verified) "" else " (checksum did not match)")
+        say("Saved the glasses' bug report, ${sizeWords(received.offer.size)}, to Download/Django/$name" + if (received.verified) "" else " (checksum did not match)")
     }
 
     private fun keep(received: Received) {

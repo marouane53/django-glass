@@ -106,7 +106,7 @@ class LiveOutputs(private val context: Context, private val albums: Albums) {
             val c = config ?: return@withContext RecordStart.NOT_READY
             if (mp4 != null) return@withContext RecordStart.STARTED
             val now = System.currentTimeMillis()
-            mp4 = runCatching { Mp4Recording(context, c, aac, "Visor_${stamp(now)}.mp4", now, albums.videosPath()) }.getOrNull()
+            mp4 = runCatching { Mp4Recording(context, c, aac, "Django_${stamp(now)}.mp4", now, albums.videosPath()) }.getOrNull()
                 ?: return@withContext RecordStart.FAILED
             _recording.value = RecordingState(now)
             RecordStart.STARTED
@@ -128,7 +128,7 @@ class LiveOutputs(private val context: Context, private val albums: Albums) {
             val held = replay.take() ?: return@withContext null
             val duration = (held.video.last().ptsUs - held.video.first().ptsUs) / 1000
             val takenAt = System.currentTimeMillis() - duration
-            val r = Mp4Recording(context, held.config, aac.takeIf { held.audio.isNotEmpty() }, "Visor_${stamp(takenAt)}_replay.mp4", takenAt, albums.videosPath())
+            val r = Mp4Recording(context, held.config, aac.takeIf { held.audio.isNotEmpty() }, "Django_${stamp(takenAt)}_replay.mp4", takenAt, albums.videosPath())
             // Interleaved by time, as the muxer prefers. A failed write keeps what came before it.
             runCatching {
                 var a = 0
@@ -151,7 +151,7 @@ class LiveOutputs(private val context: Context, private val albums: Albums) {
     suspend fun savePhoto(bytes: ByteArray, takenAt: Long, heic: Boolean = false): Uri? = withContext(Dispatchers.IO) {
         val path = albums.photosPath()
         val values = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "Visor_${stamp(takenAt)}" + if (heic) ".heic" else ".jpg")
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "Django_${stamp(takenAt)}" + if (heic) ".heic" else ".jpg")
             put(MediaStore.MediaColumns.MIME_TYPE, if (heic) "image/heic" else "image/jpeg")
             put(MediaStore.MediaColumns.RELATIVE_PATH, path)
             put(MediaStore.MediaColumns.DATE_TAKEN, takenAt)

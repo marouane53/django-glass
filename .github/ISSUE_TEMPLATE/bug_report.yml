@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Django Glass does not work as it should.
+description: Something in Django does not work as it should.
 labels: [bug]
 body:
   - type: markdown
@@ -26,7 +26,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Django Glass version
+      label: Django version
       description: Settings, About.
     validations:
       required: true

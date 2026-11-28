@@ -57,7 +57,7 @@ class Bands @Inject constructor(@ApplicationContext context: Context) {
                 )
             }
         }.getOrElse {
-            Log.w("Visor", "bands.json cannot be read", it)
+            Log.w("Django", "bands.json cannot be read", it)
             unreadable = true
             emptyList()
         }
@@ -66,7 +66,7 @@ class Bands @Inject constructor(@ApplicationContext context: Context) {
     private fun write() {
         if (unreadable) {
             runCatching { file.copyTo(File(file.parentFile, "${file.name}.bad"), overwrite = true) }.onFailure {
-                Log.w("Visor", "bands.json could not be kept aside", it)
+                Log.w("Django", "bands.json could not be kept aside", it)
                 return
             }
             unreadable = false

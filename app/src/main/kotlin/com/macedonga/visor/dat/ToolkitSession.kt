@@ -57,7 +57,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * The toolkit session apps share: an app link of Visor's own to the active pair (its app key proved on svc79), a
+ * The toolkit session apps share: an app link of Django's own to the active pair (its app key proved on svc79), a
  * svc7009 session, and Meta's toolkit app on svc6500, which draws the layouts. It opens on the first app that needs
  * it and closes a little after the last one leaves; the wearer ends it by going back on the glasses. Every session
  * forwards the wearer's band and touchpad gestures: with no layout to show, one without the toolkit app does, so the
@@ -410,7 +410,7 @@ class ToolkitSession @Inject constructor(
         private fun heard(event: Any) {
             when (event) {
                 is LinkStateChanged -> when (event.state) {
-                    LinkState.READY -> log.add("Toolkit: app link ready, trust ${link.trustResult}").also { send7009(Dat.SESSION_START_REQUEST, Dat.sessionStart(context.packageName, sessionId, "Visor", SDK_VERSION, usesDam = dam)) }
+                    LinkState.READY -> log.add("Toolkit: app link ready, trust ${link.trustResult}").also { send7009(Dat.SESSION_START_REQUEST, Dat.sessionStart(context.packageName, sessionId, "Django", SDK_VERSION, usesDam = dam)) }
                     // Before the session starts, a lost link reconnects on its own: [start] waits for it.
                     LinkState.LOST, LinkState.DISCONNECTED -> if (started.isCompleted) ended(this, "link ${event.state.name.lowercase()}")
                     else -> Unit
@@ -437,7 +437,7 @@ class ToolkitSession @Inject constructor(
             when (e.capability) {
                 Dat.INPUT -> Dat.navigation(payload).forEach { navigations.tryEmit(it) }
                 Dat.SPEECH -> Dat.speech(payload)?.let { heard ->
-                    // The toolkit app hears one utterance a start, as DAT's: while apps listen, Visor starts the next.
+                    // The toolkit app hears one utterance a start, as DAT's: while apps listen, Django starts the next.
                     if (heard.done && listeners > 0) {
                         scope.launch {
                             delay(SPEECH_RESTART_MS)

@@ -64,8 +64,8 @@ class ToolkitReady(val address: String, val appKey: PrivateKey, val appPublicKey
 
 /**
  * Sets the active pair up for Meta's device access toolkit, once, as the Meta app sets one up for a DAT app: the
- * developer toolkit app from Meta's store, a constellation manifest that lists Visor's app key (Visor signs it and
- * becomes its authority, as the Meta app was), and the glasses' grants to Visor (developer mode, motion, display,
+ * developer toolkit app from Meta's store, a constellation manifest that lists Django's app key (Django signs it and
+ * becomes its authority, as the Meta app was), and the glasses' grants to Django (developer mode, motion, display,
  * inputs). The person allows it once; every step shows on [progress].
  */
 @Singleton
@@ -102,7 +102,7 @@ class Toolkit @Inject constructor(
             step(ToolkitStep.KEY)
             open()
         } else if (!ask(app)) {
-            throw KitException(ErrorCode.REFUSED, "The person did not allow Visor to set the glasses up for apps.", reason = "setup_declined")
+            throw KitException(ErrorCode.REFUSED, "The person did not allow Django to set the glasses up for apps.", reason = "setup_declined")
         }
         store.allowed = true
         try {
@@ -138,7 +138,7 @@ class Toolkit @Inject constructor(
         return allowed
     }
 
-    // Visor's companion device association lets it open its screen from the background.
+    // Django's companion device association lets it open its screen from the background.
     private fun open() {
         context.startActivity(Intent(context, ToolkitActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
@@ -238,7 +238,7 @@ class Toolkit @Inject constructor(
         manager.notify(
             NOTIFICATION_ID,
             Notification.Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.ic_stat_visor)
+                .setSmallIcon(R.drawable.ic_stat_django)
                 .setContentTitle(context.getString(R.string.toolkit_notification))
                 .setContentText(context.getString(stepText(running.step)))
                 .setProgress(100, percent ?: 0, percent == null)
@@ -256,7 +256,7 @@ class Toolkit @Inject constructor(
         private const val NOTIFICATION_ID = 7009
         private const val ASK_MS = 120_000L
 
-        /** The glasses' permissions the toolkit app checks for Visor's package. */
+        /** The glasses' permissions the toolkit app checks for Django's package. */
         private val GRANTS = listOf("DEV_MODE", "IMU", "DISPLAY", "INPUTS")
 
         fun stepText(step: ToolkitStep): Int = when (step) {

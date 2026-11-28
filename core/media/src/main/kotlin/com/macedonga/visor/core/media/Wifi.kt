@@ -230,7 +230,7 @@ const val BAND_5GHZ = 5
 /** A Wi-Fi Direct group this phone owns, the way the Meta app does it. The glasses only join. */
 class PhoneGroup(private val context: Context, private val note: (String) -> Unit = {}) {
     /** What the glasses are told to join: ours, or Android's own when it would only make one of its own. */
-    var ssid = "DIRECT-Vi-Visor"
+    var ssid = "DIRECT-Dj-Django"
         private set
     var passphrase: String = randomPassword()
         private set
@@ -363,7 +363,7 @@ class PhoneGroup(private val context: Context, private val note: (String) -> Uni
 }
 
 /** Wi-Fi Direct answers on a thread of its own, so nothing on the main thread can hold them up. */
-private val p2pLooper: Looper by lazy { HandlerThread("visor-p2p").apply { start() }.looper }
+private val p2pLooper: Looper by lazy { HandlerThread("django-p2p").apply { start() }.looper }
 
 /** A WifiP2pManager call: null on success, else its failure reason; NO_ANSWER past P2P_MILLIS, since a dropped channel never calls back. */
 private suspend fun act(call: (WifiP2pManager.ActionListener) -> Unit): Int? {

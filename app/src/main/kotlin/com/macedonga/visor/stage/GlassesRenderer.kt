@@ -503,7 +503,7 @@ class GlassesRenderer(context: Context, private val light: LightFrame, private v
     }
 
     private companion object {
-        const val TAG = "Visor"
+        const val TAG = "Django"
         const val FOV_DEGREES = 24.0
         const val ELEVATION_DEGREES = 15.0
         const val FIT_RADIUS = 0.128

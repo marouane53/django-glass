@@ -64,7 +64,7 @@ class PhoneLibrary @Inject constructor(@ApplicationContext private val context: 
 
     init {
         scope.launch {
-            for (ask in reloads) _items.value = (query(IMAGES, albums.photosPattern(), false) + query(VIDEOS, albums.videosPattern(), true)).sortedByDescending { it.takenAt }
+            for (ask in reloads) _items.value = (query(IMAGES, false) + query(VIDEOS, true)).sortedByDescending { it.takenAt }
         }
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) = reload()
@@ -132,7 +132,7 @@ class PhoneLibrary @Inject constructor(@ApplicationContext private val context: 
         }
     }
 
-    private fun query(collection: Uri, path: String, video: Boolean): List<PhoneItem> {
+    private fun query(collection: Uri, video: Boolean): List<PhoneItem> {
         val columns = buildList {
             add(MediaStore.MediaColumns._ID)
             add(MediaStore.MediaColumns.DATE_TAKEN)
@@ -147,7 +147,7 @@ class PhoneLibrary @Inject constructor(@ApplicationContext private val context: 
         }.toTypedArray()
         val out = ArrayList<PhoneItem>()
         runCatching {
-            context.contentResolver.query(collection, columns, Albums.MATCH, arrayOf(path), null)?.use { c ->
+            albums.query(collection, columns, video)?.use { c ->
                 while (c.moveToNext()) {
                     val taken = c.getLong(1).takeIf { it > 0 } ?: (c.getLong(2) * 1000)
                     // A video keeps its frame unturned and plays it turned by ORIENTATION: a quarter turn swaps the sides.

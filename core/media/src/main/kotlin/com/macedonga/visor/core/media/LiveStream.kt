@@ -355,7 +355,7 @@ class LiveStream(
     private val _device = MutableStateFlow<DeviceState?>(null)
     val device: StateFlow<DeviceState?> = _device.asStateFlow()
 
-    /** What the stream is asked to be right now, and whether Visor picks it. */
+    /** What the stream is asked to be right now, and whether Django picks it. */
     private val _rung = MutableStateFlow<Rung?>(null)
     val rung: StateFlow<Rung?> = _rung.asStateFlow()
     private val _auto = MutableStateFlow(true)
@@ -636,10 +636,10 @@ class LiveStream(
         while (wanted) {
             delay(1_000)
             if (++tick % 2 == 0) {
-                // Followed over adb: logcat -s VisorLive.
+                // Followed over adb: logcat -s DjangoLive.
                 val s = receiver.stats.value
                 Log.i(
-                    "VisorLive",
+                    "DjangoLive",
                     "frames=${s.frames} fps=${s.fps} kbit/s=${s.bytesPerSecond * 8 / 1000} delay=${s.delayMs} gap=${s.maxGapMs} " +
                         "shown=${shownFps.value} skipped=${skipped.value} wait=${waitMs.value} rx=${(System.currentTimeMillis() - meter.lastRxAt)}ms ago",
                 )
@@ -845,7 +845,7 @@ class LiveStream(
     private suspend fun bringUpGlassesNetwork(): Boolean {
         if (!wifiIsOn(context)) return false.also { say("Turn on Wi-Fi first"); fail(LiveProblem.WIFI_OFF) }
         val (target, bundle) = keyed(live = true) ?: return false
-        val ssid = "Visor-%04x".format(SecureRandom().nextInt(0x10000))
+        val ssid = "Django-%04x".format(SecureRandom().nextInt(0x10000))
         val password = randomPassword()
         return try {
             val answer = CompletableDeferred<SoftApInfo>().also { hosted = SoftApAsk(it, ssid, password) }
@@ -868,7 +868,7 @@ class LiveStream(
             val network = net.join(info.ssid, info.password)
             // A VPN that apps may not bypass refuses every socket on another network.
             runCatching { network.socketFactory.createSocket().close() }.exceptionOrNull()?.let { refused ->
-                say("A VPN on this phone keeps Visor off the glasses' network (${refused.message})")
+                say("A VPN on this phone keeps Django off the glasses' network (${refused.message})")
                 fail(LiveProblem.VPN)
                 return false
             }

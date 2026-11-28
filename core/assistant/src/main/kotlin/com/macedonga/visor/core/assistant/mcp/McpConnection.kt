@@ -219,7 +219,7 @@ internal class McpConnection(
         return if (message.str("method") == "ping") {
             reply.put("result", JSONObject())
         } else {
-            reply.put("error", JSONObject().put("code", -32601).put("message", "Visor does not offer ${message.str("method")}"))
+            reply.put("error", JSONObject().put("code", -32601).put("message", "Django does not offer ${message.str("method")}"))
         }
     }
 
@@ -271,6 +271,6 @@ internal class McpConnection(
         fun initializeParams(version: String): JSONObject = JSONObject()
             .put("protocolVersion", LATEST)
             .put("capabilities", JSONObject())
-            .put("clientInfo", JSONObject().put("name", "visor").put("title", "Visor").put("version", version))
+            .put("clientInfo", JSONObject().put("name", "django").put("title", "Django").put("version", version))
     }
 }

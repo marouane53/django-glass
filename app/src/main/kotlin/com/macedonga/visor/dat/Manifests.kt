@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Visor's constellation manifest for a pair, kept as the Meta app's ManifestManager keeps its own: the glasses, each
- * band set up with them and Visor's app key, signed by an authority key Visor made. The Display links only to devices
+ * Django's constellation manifest for a pair, kept as the Meta app's ManifestManager keeps its own: the glasses, each
+ * band set up with them and Django's app key, signed by an authority key Django made. The Display links only to devices
  * its manifest lists, and the band trusts the Display only through the same manifest.
  */
 @Singleton
@@ -42,10 +42,10 @@ class Manifests @Inject constructor(
     private val sync: ManifestSync,
     private val log: EventLog,
 ) {
-    /** The glasses, and each band Visor set up with them, as the manifest lists them by their receipt keys. */
+    /** The glasses, and each band Django set up with them, as the manifest lists them by their receipt keys. */
     fun devices(serial: String, address: String, build: String): List<ConstellationManifest.Device> {
         val key = identities.load(serial)?.devicePublicKey ?: return emptyList()
-        val product = productId(build) ?: throw KitException(ErrorCode.UNSUPPORTED, "Visor does not know these glasses' model.", reason = "unknown_model")
+        val product = productId(build) ?: throw KitException(ErrorCode.UNSUPPORTED, "Django does not know these glasses' model.", reason = "unknown_model")
         val glasses = ConstellationManifest.Device(key, ConstellationManifest.vendorData(product), address, address)
         val withBands = bands.all.value.filter { it.glasses == serial }.mapNotNull { band ->
             val bandKey = band.publicKey?.let(::rawPublicKey) ?: return@mapNotNull null
@@ -54,13 +54,13 @@ class Manifests @Inject constructor(
         return listOf(glasses) + withBands
     }
 
-    /** Reads the glasses' receipt key when Visor has none: a change of owner with the same key, about a second. */
+    /** Reads the glasses' receipt key when Django has none: a change of owner with the same key, about a second. */
     suspend fun receiptKey(address: String, serial: String) {
         if (identities.load(serial)?.devicePublicKey != null) return
         provisioner.start(address)
         val end = withTimeoutOrNull(PROVISION_MS) { provisioner.status.first { it is Provisioner.Status.Done || it is Provisioner.Status.Failed } }
         if (end !is Provisioner.Status.Done || identities.load(serial)?.devicePublicKey == null) {
-            throw KitException(ErrorCode.FAILED, "Visor could not read the glasses' key from Meta.")
+            throw KitException(ErrorCode.FAILED, "Django could not read the glasses' key from Meta.")
         }
         withTimeoutOrNull(RECONNECT_MS) { connection.state.first { it.link == LinkState.READY } }
             ?: throw KitException(ErrorCode.NOT_CONNECTED, "The glasses did not come back after their key was read.")
@@ -69,11 +69,11 @@ class Manifests @Inject constructor(
     /**
      * Signs a new manifest for the pair, one version past the glasses' own, and installs it on each band set up with
      * them, then on the glasses: a band left out of a new manifest refuses the Display (0xc004), while a Display
-     * behind the band takes the band's newer one. Returns what Visor keeps for the pair; the toolkit's grants carry over.
+     * behind the band takes the band's newer one. Returns what Django keeps for the pair; the toolkit's grants carry over.
      */
     suspend fun install(serial: String, address: String, build: String): ToolkitPair {
         val devices = devices(serial, address, build)
-        if (devices.isEmpty()) throw KitException(ErrorCode.FAILED, "Visor has no key for these glasses.")
+        if (devices.isEmpty()) throw KitException(ErrorCode.FAILED, "Django has no key for these glasses.")
         val before = store.pair(serial)
         val authority = before?.let { ToolkitStore.pkcs8(it.authority) to it.authorityPublic }
             ?: Ecdh.generateEphemeral().let { it.privateKey to it.publicKey64 }
@@ -88,12 +88,12 @@ class Manifests @Inject constructor(
                 // The Meta app does not ask either: the Display connecting to the band is the proof.
                 ManifestInstall.Unconfirmed -> Unit
                 is ManifestInstall.Held -> if (done.version != version) {
-                    throw KitException(ErrorCode.FAILED, "The band did not take Visor's manifest (it holds version ${done.version}).")
+                    throw KitException(ErrorCode.FAILED, "The band did not take Django's manifest (it holds version ${done.version}).")
                 }
             }
         }
         val now = sync.install(authority.second, manifest)
-        if (now?.version != version) throw KitException(ErrorCode.FAILED, "The glasses did not take Visor's manifest (they hold version ${now?.version}).")
+        if (now?.version != version) throw KitException(ErrorCode.FAILED, "The glasses did not take Django's manifest (they hold version ${now?.version}).")
         val pair = ToolkitPair(
             authority.first.encoded, authority.second, version, now.salt, group, devices.map { it.publicKey.toHexString() }.toSet(),
             granted = before?.granted ?: false, manifest = manifest,

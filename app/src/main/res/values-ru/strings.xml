@@ -187,7 +187,7 @@
     <string name="live_problem_not_connected">Очки не подключены.</string>
     <string name="live_problem_wifi_off">Wi-Fi выключен.</string>
     <string name="live_problem_wifi_busy">Wi-Fi-связь с очками занята.</string>
-    <string name="live_problem_wifi_direct">Visor нужно разрешение на доступ к устройствам Wi-Fi поблизости.</string>
+    <string name="live_problem_wifi_direct">Django нужно разрешение на доступ к устройствам Wi-Fi поблизости.</string>
     <string name="live_problem_no_key">Настройте эти очки на этом телефоне.</string>
     <string name="live_problem_join">Очки не смогли подключиться к телефону.</string>
     <string name="live_problem_session">Очки не ответили по Wi-Fi.</string>
@@ -254,7 +254,7 @@
     <string name="live_stopped_heat">Очки отключили камеру: они слишком горячие</string>
     <string name="live_stopped_battery">Очки отключили камеру: низкий заряд батареи</string>
     <string name="live_stopped_folded">Очки отключили камеру: их сложили</string>
-    <string name="live_problem_vpn">Исключите Visor из VPN.</string>
+    <string name="live_problem_vpn">Исключите Django из VPN.</string>
     <string name="live_drops">Видео с очков часто обрывается</string>
     <string name="live_use_glasses_host">Использовать Wi-Fi очков</string>
     <string name="language_voice">Голос</string>
@@ -336,7 +336,7 @@
     <string name="meta_ai_listening">Слушаю…</string>
     <string name="meta_ai_release_cancel">Отпустите для отмены</string>
     <string name="meta_ai_not_heard">Ничего не слышно.</string>
-    <string name="meta_ai_mic">Visor нужен микрофон, чтобы вас слышать.</string>
+    <string name="meta_ai_mic">Django нужен микрофон, чтобы вас слышать.</string>
     <string name="meta_ai_continuing">Продолжение · %1$s</string>
     <string name="meta_ai_new">Новый разговор</string>
     <string name="meta_ai_remembered">Запомнено · %1$s</string>
@@ -428,7 +428,7 @@
     <string name="settings_how_drive">Записывается в хранилище очков, %1$s</string>
     <string name="settings_how_nothing">Ни одна таблица её не называет</string>
     <string name="settings_mapping">Сопоставление: достоверность %1$s</string>
-    <string name="settings_never_written">Visor никогда её не записывает.</string>
+    <string name="settings_never_written">Django никогда её не записывает.</string>
     <string name="settings_no_way_to_write">Очки не позволяют её записать.</string>
     <string name="settings_in_phone_settings">В настройках телефона</string>
     <string name="settings_flags">Флаги функций</string>
@@ -466,7 +466,7 @@
     <string name="settings_kit_client_name">Имя</string>
     <string name="settings_kit_client_create">Создать</string>
     <string name="settings_kit_client_token">Токен для %1$s</string>
-    <string name="settings_kit_client_token_once">Скопируйте его сейчас: Visor покажет его только один раз.</string>
+    <string name="settings_kit_client_token_once">Скопируйте его сейчас: Django покажет его только один раз.</string>
     <string name="settings_kit_client_webhook">URL вебхука (необязательно)</string>
     <string name="settings_kit_client_posts">отправляет на %1$s</string>
     <string name="kit_consent_title">Разрешить %1$s использовать ваши очки?</string>
@@ -478,11 +478,11 @@
     <string name="kit_scope_band">Получать жесты Neural Band и включать его вибрацию</string>
     <string name="kit_scope_display">Показывать текст на дисплее</string>
     <string name="kit_scope_name_state">Состояние</string>
-    <string name="kit_scope_pairs">Видеть все ваши очки, настроенные в Visor, с их именами и видом, и выбирать, к какой паре подключается Visor</string>
+    <string name="kit_scope_pairs">Видеть все ваши очки, настроенные в Django, с их именами и видом, и выбирать, к какой паре подключается Django</string>
     <string name="kit_scope_name_inputs">Касания и кнопки</string>
     <string name="kit_scope_inputs">Знать, когда вы касаетесь или проводите по сенсорной панели или нажимаете кнопку на очках</string>
     <string name="kit_scope_name_microphone">Микрофон</string>
-    <string name="kit_scope_microphone">Превращать в текст то, что слышат микрофоны ваших очков, пока приложение или Visor на экране</string>
+    <string name="kit_scope_microphone">Превращать в текст то, что слышат микрофоны ваших очков, пока приложение или Django на экране</string>
     <string name="kit_scope_name_pairs">Ваши очки</string>
     <string name="kit_scope_name_camera">Камера</string>
     <string name="kit_scope_name_band">Neural Band</string>
@@ -513,7 +513,7 @@
     <string name="tile_partly">Включено частично</string>
     <string name="tile_refused">Отклонено</string>
     <string name="settings_notifications">Уведомления на очках</string>
-    <string name="settings_notifications_sub">Уведомления телефона, которые Visor отправляет на очки. Если выключено, Visor их не отправляет.</string>
+    <string name="settings_notifications_sub">Уведомления телефона, которые Django отправляет на очки. Если выключено, Django их не отправляет.</string>
 
     <string name="topic_meta_ai">Meta AI</string>
     <string name="topic_language">Язык и голос</string>
@@ -619,7 +619,7 @@
     <string name="glasses_set_up_new">Настроить другие очки</string>
     <string name="glasses_forget">Забыть эти очки</string>
     <string name="glasses_forget_title">Забыть эти очки?</string>
-    <string name="glasses_forget_text">Visor отключится и удалит их ключ. Чтобы пользоваться очками, настройте их заново.</string>
+    <string name="glasses_forget_text">Django отключится и удалит их ключ. Чтобы пользоваться очками, настройте их заново.</string>
 
     <string name="ai_answer">Отвечать вашей моделью</string>
     <string name="ai_answer_sub">Если выключено, собственный ассистент очков работает сам по себе, без телефона.</string>
@@ -632,7 +632,7 @@
     <string name="ai_provider_chatgpt_sub">Ваш план Plus или Pro</string>
     <string name="ai_provider_openai_sub">API-ключ</string>
     <string name="ai_get_key">Получить ключ</string>
-    <string name="ai_chatgpt_not_shared">План не доступен Visor</string>
+    <string name="ai_chatgpt_not_shared">План не доступен Django</string>
     <string name="ai_pick_model">Выбрать модель</string>
     <string name="ai_see_limits">Лимиты</string>
     <string name="ai_add_credit">Пополнить</string>
@@ -651,7 +651,7 @@
     <string name="ai_chatgpt_plan_text">Допустимое использование в этом приложении расходует ваш план ChatGPT. Управляйте использованием в настройках ChatGPT.</string>
     <string name="ai_chatgpt_got_it">Понятно</string>
     <string name="ai_chatgpt_declined">Вход отменён</string>
-    <string name="ai_chatgpt_not_eligible">ChatGPT не делится вашим планом с Visor. В настройках ChatGPT, в разделе «Использование», разрешите Visor использовать план и попробуйте снова.</string>
+    <string name="ai_chatgpt_not_eligible">ChatGPT не делится вашим планом с Django. В настройках ChatGPT, в разделе «Использование», разрешите этому приложению использовать план и попробуйте снова.</string>
     <string name="ai_chatgpt_expired">Вы вышли: войдите снова</string>
     <string name="ai_chatgpt_failed">Не удалось войти: %1$s</string>
     <string name="ai_web_unavailable">Эта модель не умеет искать в интернете</string>
@@ -750,16 +750,16 @@
     <string name="access_calendar">Календарь</string>
     <string name="access_calendar_why">Чтобы Meta AI мог сказать, что у вас в календаре.</string>
     <string name="access_location_always">Местоположение всегда</string>
-    <string name="access_location_always_why">Чтобы место отмечалось и при закрытом Visor. Выберите «Разрешить всегда».</string>
+    <string name="access_location_always_why">Чтобы место отмечалось и при закрытом Django. Выберите «Разрешить всегда».</string>
     <string name="access_wifi">Wi-Fi поблизости</string>
     <string name="access_wifi_why">Для импорта и вида с камеры по Wi-Fi Direct.</string>
     <string name="access_companion">Сопутствующее устройство</string>
-    <string name="access_companion_why">Чтобы ассистент мог открывать маршруты и музыку на телефоне, пока Visor работает в фоне.</string>
+    <string name="access_companion_why">Чтобы ассистент мог открывать маршруты и музыку на телефоне, пока Django работает в фоне.</string>
     <string name="texts_photo">Фото</string>
     <string name="texts_video">Видео</string>
     <string name="texts_attachment">Вложение</string>
     <string name="texts_refused_title">SMS запрещены</string>
-    <string name="texts_refused">Разрешите Visor доступ к SMS на телефоне.</string>
+    <string name="texts_refused">Разрешите Django доступ к SMS на телефоне.</string>
 
     <string name="advanced_title">Дополнительные настройки</string>
     <string name="advanced_read_again">Считать снова</string>
@@ -806,7 +806,7 @@
     <string name="adv_increase">Увеличить</string>
     <string name="adv_value_n">Значение %1$s</string>
     <string name="adv_stored_as">Хранится как %1$d</string>
-    <string name="adv_unreadable">В очках значение, которое Visor не может прочитать.</string>
+    <string name="adv_unreadable">В очках значение, которое Django не может прочитать.</string>
     <string name="adv_not_mapped">Его структура не размечена.</string>
     <string name="adv_entry_unreadable">Не читается, оставлено как есть</string>
     <plurals name="adv_unknown_fields">
@@ -837,7 +837,7 @@
     <string name="backup_restore">Восстановить</string>
     <string name="backup_restored">Восстановлено</string>
     <string name="backup_restoring">Запись на очки: %1$d из %2$d</string>
-    <string name="backup_not_ours">Это не резервная копия Visor</string>
+    <string name="backup_not_ours">Это не резервная копия Django</string>
     <string name="backup_save_failed">Не удалось сохранить файл</string>
     <string name="backup_restore_failed">Не удалось восстановить</string>
     <plurals name="backup_settings_not_restored">
@@ -846,10 +846,10 @@
         <item quantity="many">Не восстановлено %1$d настроек очков</item>
         <item quantity="other">Не восстановлено %1$d настройки очков</item>
     </plurals>
-    <string name="backup_visor_only">Только Visor</string>
+    <string name="backup_visor_only">Только Django</string>
     <string name="backup_restore_title">Восстановить копию от %1$s?</string>
-    <string name="backup_restore_text">Настройки Visor и настройки на очках (%1$d).</string>
-    <string name="backup_restore_away">Только настройки Visor. Подключите очки и восстановите копию ещё раз, чтобы вернуть их настройки (%1$d).</string>
+    <string name="backup_restore_text">Настройки Django и настройки на очках (%1$d).</string>
+    <string name="backup_restore_away">Только настройки Django. Подключите очки и восстановите копию ещё раз, чтобы вернуть их настройки (%1$d).</string>
 
     <string name="about_title">О приложении</string>
     <string name="about_debug">Отладочная сборка</string>
@@ -857,13 +857,13 @@
     <string name="about_report">Сообщить о проблеме</string>
     <string name="about_discuss">Начать обсуждение</string>
     <string name="about_star">Поставить звезду</string>
-    <string name="star_title">Нравится Visor?</string>
+    <string name="star_title">Нравится Django?</string>
     <string name="star_ok">Поставить звезду на GitHub</string>
     <string name="star_no">Позже</string>
     <string name="star_never">Больше не показывать</string>
-    <string name="about_sum_update">Visor %1$s, вышла версия %2$s</string>
+    <string name="about_sum_update">Django %1$s, вышла версия %2$s</string>
     <string name="update_channel">Обновления</string>
-    <string name="update_ready">Вышел Visor %1$s</string>
+    <string name="update_ready">Вышел Django %1$s</string>
     <string name="update_ready_text">Скачайте его с GitHub</string>
     <string name="update_look">Проверить обновления</string>
 
@@ -873,11 +873,11 @@
     <string name="event_log_clear_title">Очистить журнал?</string>
     <string name="event_log_empty">Пока ничего не произошло</string>
     <string name="event_log_bug_report">Получить отчёт об ошибке с очков</string>
-    <string name="bug_report_asked">Отчёт об ошибке придёт в Download/Visor</string>
+    <string name="bug_report_asked">Отчёт об ошибке придёт в Download/Django</string>
 
     <!-- Onboarding -->
     <string name="onboard_begin">Начать</string>
-    <string name="onboard_access_title">Что запрашивает Visor</string>
+    <string name="onboard_access_title">Что запрашивает Django</string>
     <string name="onboard_skip">Не сейчас</string>
     <string name="onboard_continue">Продолжить</string>
     <string name="onboard_needed">Обязательно</string>
@@ -910,7 +910,7 @@
     <string name="onboard_keep_close">Держите очки рядом с телефоном.</string>
     <string name="onboard_ready">Готово.</string>
     <string name="onboard_ready_sub">Теперь этот телефон владеет очками %1$s.</string>
-    <string name="onboard_open">Открыть Visor</string>
+    <string name="onboard_open">Открыть Django</string>
     <string name="onboard_failed">Не настроены</string>
     <string name="onboard_wrong_owner">Эти очки принадлежат другому аккаунту Meta. Войдите в тот, через который их настраивали в приложении Meta AI, или сбросьте очки.</string>
     <string name="onboard_stopped_at">Остановлено на шаге: %1$s</string>
@@ -1010,7 +1010,7 @@
     <string name="features_refused">Очки оставили прежнее значение. Повторите попытку.</string>
     <string name="features_restart_title">Перезапустить очки</string>
     <string name="features_how">Как пользоваться</string>
-    <string name="features_changes">Что меняет Visor</string>
+    <string name="features_changes">Что меняет Django</string>
     <string name="features_turn_on">Включить</string>
     <string name="features_turn_off">Выключить</string>
     <string name="feature_cf">Фокус на разговоре</string>
@@ -1221,7 +1221,7 @@
     <string name="toolkit_channel">Настройка очков для приложений</string>
     <string name="toolkit_notification">Настройка очков для приложений</string>
     <string name="toolkit_title">Разрешить приложениям использовать экран очков?</string>
-    <string name="toolkit_body">%1$s хочет показывать содержимое на экране очков. Visor один раз настроит для этого очки.</string>
+    <string name="toolkit_body">%1$s хочет показывать содержимое на экране очков. Django один раз настроит для этого очки.</string>
     <string name="toolkit_allow">Настроить</string>
     <string name="toolkit_deny">Не сейчас</string>
     <string name="toolkit_ready">Очки готовы</string>
@@ -1229,12 +1229,12 @@
     <string name="toolkit_close">Закрыть</string>
     <string name="toolkit_step_key">Проверка очков</string>
     <string name="toolkit_step_app">Установка приложения инструментов Meta</string>
-    <string name="toolkit_step_manifest">Добавление Visor в очки</string>
+    <string name="toolkit_step_manifest">Добавление Django в очки</string>
     <string name="toolkit_step_permissions">Разрешения для инструментов</string>
     <string name="kit_scope_name_motion">Движение</string>
     <string name="kit_scope_motion">Узнавать, как очки и браслет Neural Band двигаются и поворачиваются, много раз в секунду, по их датчикам движения.</string>
     <string name="toolkit_point_app">Установит на очки приложение инструментов Meta</string>
-    <string name="toolkit_point_trust">Добавит Visor в список доверенных устройств очков</string>
+    <string name="toolkit_point_trust">Добавит Django в список доверенных устройств очков</string>
     <string name="toolkit_point_once">Один раз для каждой пары очков</string>
     <string name="toolkit_background">Этот экран можно закрыть. Настройка продолжится, а уведомление покажет её ход.</string>
     <string name="toolkit_ready_sub">Теперь приложения могут использовать экран и движение очков.</string>

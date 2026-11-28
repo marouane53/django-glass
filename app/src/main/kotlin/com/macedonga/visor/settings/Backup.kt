@@ -354,7 +354,7 @@ fun BackupScreen(model: BackupModel = hiltViewModel()) {
                 {
                     ValueRow(
                         stringResource(R.string.backup_save), if (settings.readAt == null) stringResource(R.string.backup_visor_only) else null,
-                        onClick = if (saving) null else ({ create.launch("visor-settings-${LocalDate.now()}.json") }), busy = saving,
+                        onClick = if (saving) null else ({ create.launch("django-settings-${LocalDate.now()}.json") }), busy = saving,
                         sub = last?.let { stringResource(R.string.backup_sum_last, dateWords(it)) } ?: stringResource(R.string.backup_sum_never),
                     )
                 },

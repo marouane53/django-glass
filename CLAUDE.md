@@ -1,4 +1,4 @@
-# Visor
+# Django
 
 Android client for Meta's glasses. The phone speaks the glasses' protocol over Bluetooth (LE L2CAP,
 RFCOMM) and Wi-Fi Direct. It talks to Meta to log in and take ownership during setup, and to fetch
@@ -23,7 +23,7 @@ the frame style and language packs. Works on real glasses as of 2026-10-05.
 - `reference/lensbreak`, a snapshot of the desktop Python client, already does most of what
   this app needs. Look there first; the protocol write-ups are in `../visor-site/src/content/protocol`
   (visor.macedonga.com/protocol), the only copy. The wiki is retired.
-- The glasses are the test. Builds get tried on hardware, so there are no test suites.
+- Run the unit tests in [BUILDING.md](BUILDING.md) and verify device behavior on glasses.
 - Keep it small: short comments, no planning documents.
 - No backend, analytics or crash reporting.
 
@@ -42,7 +42,7 @@ the frame style and language packs. Works on real glasses as of 2026-10-05.
   send queue stalls behind it.
 - DataX OK on the wire is status 0. 0x1000 is svc36's own result; sent as OK, it made the Display's
   image loader retry every image.
-- Replies on a channel the glasses opened go on `DataXConnection.mirror`. Replies on a channel Visor
+- Replies on a channel the glasses opened go on `DataXConnection.mirror`. Replies on a channel Django
   opened keep the originator bit.
 
 Display:
@@ -69,8 +69,7 @@ JDK from Android Studio, SDK `platforms/android-37.0`. Versions only in `gradle/
     ./gradlew :app:assembleDebug
     adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-Releases: push a tag `vX.Y.Z`. `.github/workflows/release.yml` builds the APK, signs it with the key in the repo
-secrets and publishes it. Run it by hand for a draft. A release key never goes in the repo.
+Follow [BUILDING.md](BUILDING.md) for a locally signed release. Keep the release key outside the repository.
 
 Emulator: the `medium_phone` AVD. Close it when done. Debug builds write every Bluetooth frame
-to `files/wire.log`: `adb exec-out run-as com.macedonga.visor cat files/wire.log` (`adb shell` mangles binary).
+to `files/wire.log`: `adb exec-out run-as org.marouane.djangoglasses cat files/wire.log` (`adb shell` mangles binary).

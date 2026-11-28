@@ -62,7 +62,7 @@ class LinkPrompt @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_visor)
+            .setSmallIcon(R.drawable.ic_stat_django)
             .setContentTitle(context.getString(if (reconnect) R.string.link_reconnect_title else R.string.link_title, name))
             .setContentIntent(open)
             .setAutoCancel(true)

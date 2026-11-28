@@ -1,6 +1,6 @@
-# Contributing to Django Glass
+# Contributing to Django
 
-Django Glass is an independent derivative of Visor. See [NOTICE.md](NOTICE.md)
+Django is an independent derivative of Visor. See [NOTICE.md](NOTICE.md)
 for the original project, source commit and credits. Contributions use the
 existing [AGPL-3.0 license](LICENSE).
 

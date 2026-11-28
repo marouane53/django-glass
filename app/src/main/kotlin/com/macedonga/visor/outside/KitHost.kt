@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
- * Visor's side of the VDK: apps bind [KitService] for [server], and what they may do is only what the person granted
+ * Django's side of the VDK: apps bind [KitService] for [server], and what they may do is only what the person granted
  * them. While Developer mode is on, the `visor` command on a computer also reaches the VDK, through adb and
  * [ShellServer].
  */
@@ -72,7 +72,7 @@ class KitHost @Inject constructor(
     private val dispatcher = Dispatcher(BuildConfig.VERSION_NAME, gate, routes.routes(), log::add)
     val server = KitServer(dispatcher)
     private val shell = ShellServer(dispatcher)
-    private val mcp = McpAdapter(dispatcher, "Visor", BuildConfig.VERSION_NAME)
+    private val mcp = McpAdapter(dispatcher, "Django", BuildConfig.VERSION_NAME)
 
     /** For the app's start: follows Developer mode and the grants for as long as the process lives. */
     fun start() {

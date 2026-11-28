@@ -75,8 +75,8 @@ internal class OAuth(private val http: OkHttpClient) {
     /** Registers this app as a public client for [redirect]. */
     suspend fun register(a: AuthServer, redirect: String): OAuthGrant {
         fun body(strict: Boolean) = JSONObject()
-            .put("client_name", "Visor")
-            .put("client_uri", "https://github.com/macedonga/visor")
+            .put("client_name", "Django")
+            .put("client_uri", "https://github.com/marouane53/django-glass")
             .put("redirect_uris", JSONArray().put(redirect))
             .put("grant_types", JSONArray().put("authorization_code").put("refresh_token"))
             .put("response_types", JSONArray().put("code"))
@@ -96,7 +96,7 @@ internal class OAuth(private val http: OkHttpClient) {
             }
             val error = o?.str("error").orEmpty()
             if (error == "invalid_redirect_uri") throw RedirectRefused(o?.str("error_description").orEmpty().ifEmpty { "redirect refused" })
-            if (!strict) throw McpException(McpException.Kind.UNAUTHORIZED, "the server would not register Visor: " + (o?.str("error_description")?.ifEmpty { null } ?: error.ifEmpty { "HTTP $code" }))
+            if (!strict) throw McpException(McpException.Kind.UNAUTHORIZED, "the server would not register Django: " + (o?.str("error_description")?.ifEmpty { null } ?: error.ifEmpty { "HTTP $code" }))
         }
         val o = answer!!
         val secret = o.str("client_secret")
@@ -246,7 +246,7 @@ internal suspend fun awaitLoopback(server: ServerSocket, path: String): String =
                     val line = socket.getInputStream().bufferedReader().readLine().orEmpty()
                     val page = "<!doctype html><meta name=viewport content='width=device-width'><body style='font:16px sans-serif;" +
                         "background:#000;color:#fff;display:grid;place-items:center;height:90vh'><div style='text-align:center'>" +
-                        "<a href='${OAuthRedirects.APP}' style='background:#fff;color:#000;padding:12px 24px;border-radius:999px;text-decoration:none'>Visor</a></div>" +
+                        "<a href='${OAuthRedirects.APP}' style='background:#fff;color:#000;padding:12px 24px;border-radius:999px;text-decoration:none'>Django</a></div>" +
                         "<script>location.href='${OAuthRedirects.APP}'</script>"
                     val bytes = page.toByteArray()
                     socket.getOutputStream().apply {

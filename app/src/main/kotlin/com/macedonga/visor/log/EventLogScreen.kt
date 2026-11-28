@@ -75,7 +75,7 @@ fun EventLogScreen(model: EventLogViewModel = hiltViewModel()) {
         light = 0.3f,
         list = list,
         actions = {
-            RoundIcon(VisorIcons.Download, stringResource(R.string.event_log_save), { create.launch("visor-log-${LocalDateTime.now().format(FILE_TIME)}.txt") })
+            RoundIcon(VisorIcons.Download, stringResource(R.string.event_log_save), { create.launch("django-log-${LocalDateTime.now().format(FILE_TIME)}.txt") })
             RoundIcon(VisorIcons.Share, stringResource(R.string.event_log_share), {
                 scope.launch {
                     runCatching { share(context, model.log.text()) }.onFailure { model.log.add("Could not share the log: ${it.message}") }
@@ -116,9 +116,9 @@ private fun LogRow(line: String) {
 /** What the log came from: the first line of the file. */
 private fun head(): String {
     val webView = WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" } ?: "unknown"
-    // A work profile or Samsung's Secure Folder is another user: what Visor saves there, the main gallery never shows.
+    // A work profile or Samsung's Secure Folder is another user: what Django saves there, the main gallery never shows.
     val user = android.os.Process.myUid() / 100_000
-    return "Visor ${BuildConfig.VERSION_NAME}, ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}, WebView $webView" +
+    return "Django ${BuildConfig.VERSION_NAME}, ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}, WebView $webView" +
         if (user != 0) ", user $user" else ""
 }
 
@@ -132,7 +132,7 @@ private fun report(context: Context, text: String): String {
 /** The log for mail or chat. */
 private suspend fun share(context: Context, text: String) {
     val file = withContext(Dispatchers.IO) {
-        File(context.cacheDir, "log/visor-log.txt").apply {
+        File(context.cacheDir, "log/django-log.txt").apply {
             parentFile?.mkdirs()
             writeText(report(context, text))
         }

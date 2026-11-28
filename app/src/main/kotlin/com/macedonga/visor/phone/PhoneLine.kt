@@ -55,7 +55,7 @@ class PhoneLine @Inject constructor(
     override suspend fun call(who: String, kind: String, whatsApp: Boolean): HandsetDone = withContext(Dispatchers.IO) {
         if (!whatsApp && !context.allows(Manifest.permission.CALL_PHONE)) {
             return@withContext HandsetDone(
-                "Visor may not place calls. Tell the wearer to allow Place and answer calls in Visor, Settings > Phone access.", failed = true,
+                "Django may not place calls. Tell the wearer to allow Place and answer calls in Django, Settings > Phone access.", failed = true,
             )
         }
         if (inCall()) return@withContext HandsetDone("A call is already under way on the phone.", failed = true)
@@ -72,7 +72,7 @@ class PhoneLine @Inject constructor(
     override suspend fun text(who: String, kind: String, message: String): HandsetDone = withContext(Dispatchers.IO) {
         if (!context.allows(Manifest.permission.SEND_SMS)) {
             return@withContext HandsetDone(
-                "Visor may not send texts. Tell the wearer to allow Text messages in Visor, Settings > Phone access.", failed = true,
+                "Django may not send texts. Tell the wearer to allow Text messages in Django, Settings > Phone access.", failed = true,
             )
         }
         val number = when (val pick = contacts.pick(who, kind)) {
@@ -88,7 +88,7 @@ class PhoneLine @Inject constructor(
     override suspend fun recentCalls(count: Int, missed: Boolean): HandsetDone = withContext(Dispatchers.IO) {
         if (!context.allows(Manifest.permission.READ_CALL_LOG)) {
             return@withContext HandsetDone(
-                "Visor may not read the call history. Tell the wearer to allow Call history in Visor, Settings > Phone access.", failed = true,
+                "Django may not read the call history. Tell the wearer to allow Call history in Django, Settings > Phone access.", failed = true,
             )
         }
         val lines = runCatching {
@@ -130,14 +130,14 @@ class PhoneLine @Inject constructor(
 
     override suspend fun location(): HandsetDone {
         if (!context.allows(Manifest.permission.ACCESS_FINE_LOCATION) && !context.allows(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-            return HandsetDone("Visor may not use the phone's location. Tell the wearer to allow Location in Visor, Settings > Phone access.", failed = true)
+            return HandsetDone("Django may not use the phone's location. Tell the wearer to allow Location in Django, Settings > Phone access.", failed = true)
         }
         if (!position.enabled()) return HandsetDone("Location is off on the phone; the wearer turns it on in the phone's quick settings.", failed = true)
         val now = System.currentTimeMillis()
         val fix = position.freshFix(FIX_MS) ?: position.fix()?.takeIf { now - it.time < STALE_MS }
             ?: return HandsetDone(
                 "The phone could not tell where it is just now." + if (!context.allows(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-                    " With Visor in the background, Android needs Location set to Allow all the time, in Visor, Settings > Phone access."
+                    " With Django in the background, Android needs Location set to Allow all the time, in Django, Settings > Phone access."
                 } else "",
                 failed = true,
             )
@@ -172,7 +172,7 @@ class PhoneLine @Inject constructor(
 
     override suspend fun calendar(from: Int, days: Int): HandsetDone = withContext(Dispatchers.IO) {
         if (!context.allows(Manifest.permission.READ_CALENDAR)) {
-            return@withContext HandsetDone("Visor may not read the calendar. Tell the wearer to allow Calendar in Visor, Settings > Phone access.", failed = true)
+            return@withContext HandsetDone("Django may not read the calendar. Tell the wearer to allow Calendar in Django, Settings > Phone access.", failed = true)
         }
         val zone = ZoneId.systemDefault()
         val first = LocalDate.now().plusDays(from.toLong())

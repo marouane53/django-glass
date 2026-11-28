@@ -1,8 +1,10 @@
-# Django Glass
+<h1 align="center">
+  <img src="docs/banner.png" alt="Django" width="100%">
+</h1>
 
 **Your assistant and AI agents, through your glasses.**
 
-Django Glass is an Android client for Meta smart glasses with conversational AI,
+Django is an Android client for Meta smart glasses with conversational AI,
 cloud speech, a separate OpenAI Dots call mode and selectable spoken notifications.
 
 **Built on [Visor](https://github.com/macedonga/visor), by macedonga and its contributors.**
@@ -23,7 +25,7 @@ license. The [original Visor README](README-VISOR.md) is also preserved.
 | Voice capture | “Take a picture” captures a photo; “Start recording” launches a video. |
 | Photo analysis | “Look and…” attaches a glasses photo and your question to ChatGPT. Follow-ups reuse that photo; “look again and…” requests a new view. |
 | Spoken notifications | Choose what Finn reads and limit announcements to when your phone is locked. Dots and texts can read full messages; WhatsApp announces only the sender. |
-| Visor foundation | Retains upstream pairing, gallery, media import, device settings and other client features. |
+| Glasses client | Pair the glasses, import photos and videos, and change device settings. |
 
 ## Status and compatibility
 
@@ -55,7 +57,7 @@ are separate from the synthetic checks.
 
 1. Build and install both apps using [BUILDING.md](BUILDING.md). Sign-in credentials,
    client configuration and signing keys are supplied locally. None are bundled here.
-2. Open Django Glass, grant the needed permissions, sign in to Meta and pair the
+2. Open Django, grant the needed permissions, sign in to Meta and pair the
    glasses. Use one owner app for the glasses at a time.
 3. Sign in to ChatGPT in Django's assistant settings, or configure another supported
    model provider.
@@ -78,6 +80,9 @@ are separate from the synthetic checks.
 
 The glasses assistant calls itself **Django**. Its normal conversation and the
 existing OpenAI dot named Django are separate modes. See [USAGE.md](USAGE.md).
+
+Photos and videos go to the Django albums by default. The gallery can still
+display captures saved by an earlier version of Django.
 
 In the assistant's voice settings, **Finn playback** offers Classic, Streaming
 and Flash-Lite for the local Glasses Speech companion. Classic is the default.

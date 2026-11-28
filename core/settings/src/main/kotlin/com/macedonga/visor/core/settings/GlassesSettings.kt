@@ -55,10 +55,10 @@ data class SettingInfo(
 
 private val WRITABLE = setOf(Kind.BOOL, Kind.INT, Kind.STR, Kind.FLOAT)
 
-// The one key Visor never writes: the skin-temperature controller uses it to shut hot glasses down.
+// The one key Django never writes: the skin-temperature controller uses it to shut hot glasses down.
 private val PROTECTED = setOf("sg_disable_thermal_shutdown")
 
-/** Visor will not write [key]. */
+/** Django will not write [key]. */
 fun isProtected(key: String): Boolean = key in PROTECTED
 
 data class SettingsState(
@@ -269,7 +269,7 @@ class GlassesSettings(private val connection: GlassesConnection, drive: RlDriveR
         sync = null
         if (s.refused) {
             _state.update { it.copy(reading = false) }
-            return say("These glasses keep no settings store Visor can read (service $SVC_RLDRIVE refused)")
+            return say("These glasses keep no settings store Django can read (service $SVC_RLDRIVE refused)")
         }
 
         val changed = s.objects.values.sumOf { it.size }
@@ -339,7 +339,7 @@ class GlassesSettings(private val connection: GlassesConnection, drive: RlDriveR
 
     private fun tracked(namespace: String) = namespace in namespacesOf(connection.state.value.info?.deviceUuid.orEmpty())
 
-    /** Round 0 of a sync the Display started: claim what Visor last saw, so round 2 brings what changed since. */
+    /** Round 0 of a sync the Display started: claim what Django last saw, so round 2 brings what changed since. */
     private suspend fun answerPeer(round0: SyncReply, link: DataXConnection) {
         val namespace = round0.namespace
         if (!tracked(namespace)) {
@@ -380,7 +380,7 @@ class GlassesSettings(private val connection: GlassesConnection, drive: RlDriveR
     }
 
     private suspend fun onReply(reply: SyncReply, link: DataXConnection) {
-        // The Display starts syncs of its own after a change on it; Visor answers them as the responder.
+        // The Display starts syncs of its own after a change on it; Django answers them as the responder.
         if (isDisplayBuild(connection.state.value.info?.build)) {
             val now = System.currentTimeMillis()
             peers.values.removeIf { now - it.at > PEER_MILLIS }

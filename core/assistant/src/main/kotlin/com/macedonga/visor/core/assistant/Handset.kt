@@ -215,7 +215,7 @@ internal class HandsetTools(private val handset: Handset, private val messaging:
     }
 
     private companion object {
-        const val NO_LISTENER = "Visor cannot see the phone's notifications. Tell the wearer to allow Notification access in Visor, " +
+        const val NO_LISTENER = "Django cannot see the phone's notifications. Tell the wearer to allow Notification access in Django, " +
             "Settings > Phone access."
 
         fun plain(s: String) = Normalizer.normalize(s.trim(), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()

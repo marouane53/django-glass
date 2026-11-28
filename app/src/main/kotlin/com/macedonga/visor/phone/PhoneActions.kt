@@ -97,7 +97,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
             note("$label's session did not play it")
         }
         val browsed = browse(pkg)
-        if (browsed == null && browserService(pkg) != null) gaveUp = "$label's media browser did not let Visor in"
+        if (browsed == null && browserService(pkg) != null) gaveUp = "$label's media browser did not let Django in"
         browsed?.let { (browser, c) ->
             try {
                 // A session may accept a search and play nothing; its browser's search, played by id, still works.
@@ -124,7 +124,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
         val c = sessions?.let { s -> s.firstOrNull { it.playing() } ?: s.firstOrNull() }
         if (c == null) {
             // Without a session to see, the phone still sends media keys to the app that played last.
-            val key = KEYS[control] ?: return PhoneDone("", if (sessions == null) "Visor has no notification access" else "nothing is playing")
+            val key = KEYS[control] ?: return PhoneDone("", if (sessions == null) "Django has no notification access" else "nothing is playing")
             val audio = context.getSystemService(AudioManager::class.java)
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, key))
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, key))
@@ -150,7 +150,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
     }
 
     override fun nowPlaying(): NowPlaying {
-        val sessions = sessions() ?: return NowPlaying(unknown = "Visor has no notification access, so it cannot see what plays")
+        val sessions = sessions() ?: return NowPlaying(unknown = "Django has no notification access, so it cannot see what plays")
         val c = sessions.firstOrNull { it.playing() } ?: sessions.firstOrNull() ?: return NowPlaying(unknown = "nothing is playing")
         val m = c.metadata
         return NowPlaying(
@@ -236,7 +236,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
                 }
             }
         }
-        if (connected == null) note("${label(pkg)}'s media browser did not let Visor in")
+        if (connected == null) note("${label(pkg)}'s media browser did not let Django in")
         return connected
     }
 
@@ -270,7 +270,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
             sessions.orEmpty().map { it.packageName })
             .filter { it != context.packageName && pm.getLaunchIntentForPackage(it) != null }.toSet()
 
-    /** Starts [implicit] when Visor may, and puts it in a notification when it may not or the phone is locked. */
+    /** Starts [implicit] when Django may, and puts it in a notification when it may not or the phone is locked. */
     private fun open(implicit: Intent, id: Int, title: String, named: String): PhoneDone {
         // Explicit, so it opens the app it names and nothing else; with no default, the first that takes it.
         val pkg = implicit.`package` ?: handler(implicit)
@@ -281,13 +281,13 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
         val started = mayOpenApps(context) && runCatching { context.startActivity(intent) }.isSuccess
         if (started && !context.getSystemService(KeyguardManager::class.java).isKeyguardLocked) return PhoneDone(app, opened = true)
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (!manager.areNotificationsEnabled()) return PhoneDone(app, "Visor may not post notifications, and it cannot open $app from the background")
+        if (!manager.areNotificationsEnabled()) return PhoneDone(app, "Django may not post notifications, and it cannot open $app from the background")
         manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.meta_ai_title), NotificationManager.IMPORTANCE_HIGH))
         val tap = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         manager.notify(
             id,
             Notification.Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.ic_stat_visor)
+                .setSmallIcon(R.drawable.ic_stat_django)
                 .setContentTitle(title)
                 .setContentText(app)
                 .setContentIntent(tap)

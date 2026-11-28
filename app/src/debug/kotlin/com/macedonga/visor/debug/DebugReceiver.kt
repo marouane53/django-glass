@@ -127,7 +127,7 @@ import org.json.JSONObject
 
 /**
  * Debug builds only: the app over adb, with the phone locked. The answer is the broadcast's result
- * data; everything else also lands in `logcat -s Visor`.
+ * data; everything else also lands in `logcat -s Django`.
  *
  *     adb shell am broadcast -n com.macedonga.visor/.debug.DebugReceiver -a com.macedonga.visor.debug.STATUS
  */
@@ -179,7 +179,7 @@ class DebugReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action?.substringAfterLast('.').orEmpty()
-        Log.i("Visor", "API: $action")
+        Log.i("Django", "API: $action")
         // A bad extra answers instead of killing the app; no branch throws after its goAsync().
         try {
             handle(context, intent, action)
@@ -191,7 +191,7 @@ class DebugReceiver : BroadcastReceiver() {
     private fun handle(context: Context, intent: Intent, action: String) {
         when (action) {
             "STATUS" -> resultData = status()
-            // The phone's thread list as Visor reads it for the glasses' Messages: --ei count.
+            // The phone's thread list as Django reads it for the glasses' Messages: --ei count.
             "THREADS" -> resultData = texts.describeThreads(intent.getIntExtra("count", 15))
             // A second pair on the home, a black Skyler, never connected; --ez on false takes it away.
             "DEMO_PAIR" -> resultData = demoPair(intent.getBooleanExtra("on", true))
@@ -199,9 +199,9 @@ class DebugReceiver : BroadcastReceiver() {
             "PROVISION" -> resultData = (connection.state.value.target?.link as? GlassesLink.Bluetooth)?.address
                 ?.let { provisioner.start(it); "started on $it; follow LOG" } ?: "no pair over Bluetooth"
             "PROVISION_STATUS" -> resultData = provisioner.status.value.toString()
-            // Visor's own app link to the Display (AppLinkProbe): --es pem <base64 PEM of the app key> --ei version N
+            // Django's own app link to the Display (AppLinkProbe): --es pem <base64 PEM of the app key> --ei version N
             // --es salt <hex>; then APP_MOTION [--ei rate], APP_LAYOUT, APP_STOP. Steps go to LOG as "AppLink:".
-            // Without a pem: Visor's toolkit key and the manifest it installed on this pair.
+            // Without a pem: Django's toolkit key and the manifest it installed on this pair.
             "APP_LINK" -> resultData = if (!intent.hasExtra("pem")) {
                 val address = (connection.state.value.target?.link as? GlassesLink.Bluetooth)?.address
                 val pair = connection.state.value.info?.serial?.let(toolkit::pair)
@@ -228,9 +228,9 @@ class DebugReceiver : BroadcastReceiver() {
                                 gap = 12
                                 crossAlign = LayoutAlign.CENTER
                                 icon(LayoutIconName.SMART_GLASSES)
-                                text("Visor") { style = LayoutStyle.HEADING }
+                                text("Django") { style = LayoutStyle.HEADING }
                             }
-                            text("This layout came from Visor, through Meta's toolkit app.")
+                            text("This layout came from Django, through Meta's toolkit app.")
                             buttons { button("ok", "OK") { icon = LayoutIconName.CHECKMARK; primary = true } }
                         },
                     ),
@@ -245,8 +245,8 @@ class DebugReceiver : BroadcastReceiver() {
             )
             "MIRANDA_STOP" -> resultData = MirandaProbe.stop(connection, log)
             // The glasses say --es text in their own voice, through the data collection daemon's speech.
-            "SAY" -> answerLater { runCatching { glassesMotion.say(intent.getStringExtra("text") ?: "Hello from Visor."); "said" }.getOrElse { "failed: ${it.message}" } }
-            // Grants a phone app the glasses' permissions over RLDrive, as the Meta app does: --es pkg (Visor by default)
+            "SAY" -> answerLater { runCatching { glassesMotion.say(intent.getStringExtra("text") ?: "Hello from Django."); "said" }.getOrElse { "failed: ${it.message}" } }
+            // Grants a phone app the glasses' permissions over RLDrive, as the Meta app does: --es pkg (Django by default)
             // --es perms DEV_MODE,IMU (short names); then lists what the namespace holds.
             "GRANT" -> answerLater {
                 val app = intent.getStringExtra("pkg") ?: context.packageName
@@ -306,7 +306,7 @@ class DebugReceiver : BroadcastReceiver() {
             }
             "BUGREPORT" -> {
                 media.requestBugReport(if (intent.hasExtra("mode")) intent.getIntExtra("mode", 0) else null)
-                resultData = "asked; the zip goes to Download/Visor"
+                resultData = "asked; the zip goes to Download/Django"
             }
             "DRIVE_SET" -> {
                 val key = intent.getStringExtra("key").orEmpty()
@@ -324,7 +324,7 @@ class DebugReceiver : BroadcastReceiver() {
                     key = "visor|" + System.currentTimeMillis(),
                     pkg = intent.getStringExtra("pkg") ?: "org.telegram.messenger",
                     appName = intent.getStringExtra("app") ?: "Telegram",
-                    title = intent.getStringExtra("title") ?: "Visor",
+                    title = intent.getStringExtra("title") ?: "Django",
                     text = intent.getStringExtra("text") ?: "Test",
                     postTime = System.currentTimeMillis(),
                     type = intent.getIntExtra("type", 1),
@@ -424,7 +424,7 @@ class DebugReceiver : BroadcastReceiver() {
                 config.read()
                 resultData = "asking the glasses for a bug report"
             }
-            // MobileConfig values whose name contains --es key, as Visor last read or wrote them.
+            // MobileConfig values whose name contains --es key, as Django last read or wrote them.
             "MC_GET" -> {
                 val key = intent.getStringExtra("key").orEmpty()
                 val s = config.state.value
@@ -467,7 +467,7 @@ class DebugReceiver : BroadcastReceiver() {
                 val key = intent.getStringExtra("key").orEmpty()
                 resultData = if (settings.write(key, intent.getStringExtra("value").orEmpty())) "written; READ_SETTINGS to check" else "refused: unknown key or value"
             }
-            // The albums, and how many of Visor's own files each top folder holds.
+            // The albums, and how many of Django's own files each top folder holds.
             "ALBUMS" -> resultData = buildString {
                 appendLine("photos=${albums.photosPath()} videos=${albums.videosPath()} together=${albums.together.value} moving=${albums.moving.value} gallery=${library.items.value.size}")
                 val store = MediaStore.VOLUME_EXTERNAL_PRIMARY
@@ -560,7 +560,7 @@ class DebugReceiver : BroadcastReceiver() {
             "PROMPTER" -> answerLater {
                 if (intent.getBooleanExtra("close", false)) prompter.close()
                 else prompter.show(
-                    intent.getStringExtra("text") ?: "Testing the teleprompter from Visor.",
+                    intent.getStringExtra("text") ?: "Testing the teleprompter from Django.",
                     PrompterLook(paged = intent.getBooleanExtra("paged", false), followVoice = intent.getBooleanExtra("voice", false)),
                 )
                 delay(300)
@@ -848,8 +848,8 @@ class DebugReceiver : BroadcastReceiver() {
             )
             // An app card on the Briefing: --es id, --es name, --es title, --es text, --es detail; CARD_REMOVE --es id.
             "CARD" -> {
-                val title = intent.getStringExtra("title") ?: "Visor"
-                val text = intent.getStringExtra("text") ?: "A card of Visor's own."
+                val title = intent.getStringExtra("title") ?: "Django"
+                val text = intent.getStringExtra("text") ?: "A card of Django's own."
                 val layout = Layout {
                     gap = 8
                     row {
@@ -868,7 +868,7 @@ class DebugReceiver : BroadcastReceiver() {
                         more.split('|').forEach { text(it) { style = LayoutStyle.META } }
                     }
                 }
-                briefing.set("com.macedonga.visor.debug", intent.getStringExtra("id") ?: "test", intent.getStringExtra("name") ?: "Visor test", "bell", layout, detail)
+                briefing.set("com.macedonga.visor.debug", intent.getStringExtra("id") ?: "test", intent.getStringExtra("name") ?: "Django test", "bell", layout, detail)
                 resultData = "set; the Briefing shows it when it asks again"
             }
             // A card that shows every card feature: CARD_SHOWCASE.
@@ -949,7 +949,7 @@ class DebugReceiver : BroadcastReceiver() {
         val pending = goAsync()
         scope.launch {
             val text = runCatching { work() }.getOrElse { "failed: ${it.message}" }
-            Log.i("Visor", "API answer: $text")
+            Log.i("Django", "API answer: $text")
             pending.resultData = text
             pending.finish()
         }

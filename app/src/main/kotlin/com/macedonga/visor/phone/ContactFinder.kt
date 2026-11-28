@@ -87,7 +87,7 @@ class ContactFinder @Inject constructor(@ApplicationContext private val context:
     private companion object {
         const val MOBILE = "mobile"
         const val MAX_LISTED = 6
-        const val NO_CONTACTS = "Visor may not read the phone's contacts. Tell the wearer to allow Contacts in Visor, Settings > Phone access, " +
+        const val NO_CONTACTS = "Django may not read the phone's contacts. Tell the wearer to allow Contacts in Django, Settings > Phone access, " +
             "or to say the number."
 
         fun kindOf(type: Int, label: String?): String = when (type) {

@@ -104,7 +104,7 @@ class KitTranscripts @Inject constructor(
     private fun join(caller: Caller, tag: String): SharedFlow<Result<Transcript>> {
         val running = language
         if (listeners > 0 && running != tag) {
-            throw KitException(ErrorCode.BUSY, "Visor hears in $running for another app.")
+            throw KitException(ErrorCode.BUSY, "Django hears in $running for another app.")
         }
         listeners++
         language = tag
@@ -129,7 +129,7 @@ class KitTranscripts @Inject constructor(
             return@channelFlow
         }
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            fail(KitException(ErrorCode.UNSUPPORTED, "Visor may not record audio. Allow the microphone in Visor's settings.", reason = "no_permission"))
+            fail(KitException(ErrorCode.UNSUPPORTED, "Django may not record audio. Allow the microphone in Django's settings.", reason = "no_permission"))
             return@channelFlow
         }
         val address = (connection.state.value.target?.link as? GlassesLink.Bluetooth)?.address

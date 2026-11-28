@@ -103,7 +103,7 @@ class Outside @Inject constructor(
 
     private suspend fun readPaired() = withContext(Dispatchers.IO) { runCatching { store.all().isNotEmpty() }.getOrNull() }
 
-    private suspend fun newestMoment() = moments(recentShots(context, albums), max = 1).firstOrNull().orEmpty()
+    private suspend fun newestMoment() = moments(recentShots(albums), max = 1).firstOrNull().orEmpty()
 
     private fun glimpseOf(
         state: GlassesState,

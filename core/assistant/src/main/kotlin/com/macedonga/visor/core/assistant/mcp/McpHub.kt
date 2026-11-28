@@ -54,7 +54,7 @@ class Toolbox(val tools: List<ExposedTool>, val prompt: String) {
     fun find(name: String): ExposedTool? = tools.firstOrNull { it.name == name }
 }
 
-/** Something the assistant did through a tool, for the diary. [kind] and [subject] name Visor's own tools for the app to word; empty for a server's. */
+/** Something the assistant did through a tool, for the diary. [kind] and [subject] name Django's own tools for the app to word; empty for a server's. */
 data class ToolAction(val server: String, val what: String, val ok: Boolean, val kind: String = "", val subject: String = "")
 
 /** A sign-in in progress. */
@@ -259,7 +259,7 @@ class McpHub(private val context: Context, val store: McpStore) {
         if (exposed.isEmpty()) return Toolbox(emptyList(), "")
         val prompt = " You can also use tools from ${names.joinToString()}. Use them whenever the wearer asks you to do, check " +
             "or find something they cover, without asking first unless the request is unclear; after acting, say in a few " +
-            "words what was done. Never say something was done unless a tool confirmed it. Earlier answers end with Visor's note " +
+            "words what was done. Never say something was done unless a tool confirmed it. Earlier answers end with Django's note " +
             "in square brackets of what the tools did for them; one without a note did nothing. Never write such a note " +
             "yourself, and call the tool each time an action is asked, even one done before." + instructions
         return Toolbox(exposed, prompt)
@@ -315,7 +315,7 @@ class McpHub(private val context: Context, val store: McpStore) {
         scope.launch { beginSignIn(id) }
     }
 
-    /** Finds where [id] signs in, registers Visor there unless a client was typed in, and puts the page to open in [signIn]. */
+    /** Finds where [id] signs in, registers Django there unless a client was typed in, and puts the page to open in [signIn]. */
     private suspend fun beginSignIn(id: String) {
         val s = store.get(id) ?: return
         pending?.loopback?.cancel()
@@ -345,7 +345,7 @@ class McpHub(private val context: Context, val store: McpStore) {
                     oauth.register(at, OAuthRedirects.LOOPBACK)
                 }
             }
-            // The registration is kept at once, so trying again does not register Visor a second time.
+            // The registration is kept at once, so trying again does not register Django a second time.
             if (!grant.manualClient) store.update(id) { it.copy(oauth = grant.copy(accessToken = it.oauth?.accessToken.orEmpty(), refreshToken = it.oauth?.refreshToken.orEmpty(), expiresAt = it.oauth?.expiresAt ?: 0)) }
             val state = OAuth.secret(32)
             val verifier = OAuth.secret(64)
