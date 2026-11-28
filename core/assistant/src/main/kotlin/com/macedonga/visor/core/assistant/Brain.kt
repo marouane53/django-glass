@@ -56,6 +56,8 @@ private class Turn(
     val capturePhoto: (suspend () -> ByteArray?)? = null,
     val cameraAction: (suspend (CameraAction) -> Boolean)? = null,
     val apps: List<AppTool> = emptyList(),
+    // Hears the final answer's text as the model writes it, so speech can start before it ends.
+    val speak: ((String) -> Unit)? = null,
 ) {
     val remembered = ArrayList<String>()
     val actions = ArrayList<ToolAction>()
@@ -122,7 +124,8 @@ class Brain(
 
     /**
      * The answer to [question] after [past], with [image] (a JPEG) when the glasses sent one; [canEnd] offers the
-     * end_conversation tool. Throws on any failure.
+     * end_conversation tool. [speak] hears the final answer's text as it is written, where the provider streams it
+     * (the ChatGPT plan); it may have heard part of an answer that then fails. Throws on any failure.
      */
     suspend fun answer(
         question: String,
@@ -135,6 +138,7 @@ class Brain(
         canEnd: Boolean = false,
         capturePhoto: (suspend () -> ByteArray?)? = null,
         cameraAction: (suspend (CameraAction) -> Boolean)? = null,
+        speak: ((String) -> Unit)? = null,
     ): Reply = withContext(Dispatchers.IO) {
         // With the camera off only a stop goes without the model; the model answers the rest, its camera tools withheld.
         val keyword = if (cameraAction != null && audience == Audience.GLASSES) {
@@ -163,7 +167,7 @@ class Brain(
         } catch (_: Exception) {
             Toolbox(emptyList(), "")
         }
-        val turn = Turn(box, image, glasses?.described(), canEnd, capturePhoto, cameraAction, appTools.tools())
+        val turn = Turn(box, image, glasses?.described(), canEnd, capturePhoto, cameraAction, appTools.tools(), speak)
         val modelNote = if (c.provider == Provider.CHATGPT) {
             val effort = c.reasoningEffort.apiValue ?: "OpenAI's default"
             " When asked about your model or effort, say this request uses ${c.answerModel} with $effort reasoning effort."
@@ -193,6 +197,9 @@ class Brain(
         check(text.isNotEmpty()) { "the model gave an empty answer" }
         Reply(text, turn.remembered, turn.actions, turn.ends)
     }
+
+    /** A piece of an answer heard through [answer]'s speak, as the words to say. */
+    fun speakable(piece: String): String = spoken(piece).replace(TOOL_NOTE, "").trim()
 
     /** One sentence for the wearer, in [locale]'s language, written from [what]; outside the conversation. */
     suspend fun phrase(what: String, locale: Locale): String = withContext(Dispatchers.IO) {
@@ -477,12 +484,14 @@ class Brain(
             .apply { tools().takeIf { it.length() > 0 }?.let { put("tools", it) } }
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
+            // After a tool ran, a quiet turn may end without a word: its answer is not spoken before it is whole.
+            val speak = turn?.speak?.takeUnless { c.quietAfterActions && turn.toolsRan }
             val answer = try {
-                respond(c, body(), tokens, effort)
+                respond(c, body(), tokens, effort, speak)
             } catch (error: IllegalStateException) {
                 if (!plan || PLAN_FLAT in refused || functions.isEmpty() || !NAMESPACE_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
                 refused += PLAN_FLAT
-                respond(c, body(), tokens, effort)
+                respond(c, body(), tokens, effort, speak)
             }
             val items = answer.optJSONArray("output")?.objects().orEmpty()
             val text = items.filter { it.optString("type") == "message" }
@@ -512,13 +521,15 @@ class Brain(
      * One Responses API call, with a key or paid by the ChatGPT plan. Encrypted reasoning lets later tool rounds
      * carry the model's state forward, even when the request leaves effort at the provider default.
      */
-    private suspend fun respond(c: AssistantConfig, body: JSONObject, tokens: Int, effort: ReasoningEffort): JSONObject {
+    private suspend fun respond(
+        c: AssistantConfig, body: JSONObject, tokens: Int, effort: ReasoningEffort, speak: ((String) -> Unit)? = null,
+    ): JSONObject {
         val plan = c.provider == Provider.CHATGPT
         val url = c.api.trimEnd('/') + "/responses"
         val key = (if (plan) "plan " else "$url ") + body.optString("model")
         // The plan takes no length limit; it sets its own.
         if (!plan) body.put("max_output_tokens", tokens + THINKING_TOKENS)
-        val call: suspend (JSONObject) -> JSONObject = if (plan) chatGpt::respond else { b -> post(url, bearerHeaders(c.apiKey), b) }
+        val call: suspend (JSONObject) -> JSONObject = if (plan) { b -> chatGpt.respond(b, speak) } else { b -> post(url, bearerHeaders(c.apiKey), b) }
         if (plan) {
             // If the plan refuses encrypted reasoning, retry with the same effort setting.
             val encryptedKey = "$key encrypted"

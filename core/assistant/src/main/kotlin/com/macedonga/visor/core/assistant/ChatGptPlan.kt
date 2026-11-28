@@ -249,13 +249,14 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
 
     /**
      * One Responses API call paid by the plan: streamed, as the plan requires, and read to its last event. The final
-     * response object, or an error worded as the other providers' are.
+     * response object, or an error worded as the other providers' are. [onFinal] hears the text of the final answer,
+     * never a tool round's commentary, as each piece arrives.
      */
-    internal suspend fun respond(body: JSONObject): JSONObject {
+    internal suspend fun respond(body: JSONObject, onFinal: ((String) -> Unit)? = null): JSONObject {
         val request = JSONObject(body.toString()).put("stream", true).put("store", false)
         var refreshed = false
         while (true) {
-            val (code, answer) = stream(request, token())
+            val (code, answer) = stream(request, token(), onFinal)
             if (code == 401 && !refreshed) {
                 refreshed = true
                 tokens.withLock { refresh() }
@@ -336,7 +337,7 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
     }
 
     /** The streamed call: the HTTP status and the final response; a stream that fails throws its error. */
-    private suspend fun stream(body: JSONObject, token: String): Pair<Int, JSONObject> = suspendCancellableCoroutine { call ->
+    private suspend fun stream(body: JSONObject, token: String, onFinal: ((String) -> Unit)?): Pair<Int, JSONObject> = suspendCancellableCoroutine { call ->
         val start = android.os.SystemClock.elapsedRealtime()
         val http = URL("$OPENAI_API/responses").openConnection() as HttpURLConnection
         call.invokeOnCancellation { thread { http.disconnect() } }
@@ -384,6 +385,7 @@ class ChatGptPlan(context: Context, private val store: AssistantConfigStore) {
                                 if (firstFinal < 0 && event.optString("item_id") in finalItems) firstFinal = elapsed
                             }
                             deltas.append(delta)
+                            if (event.optString("item_id") in finalItems) onFinal?.invoke(delta)
                         }
                         "response.completed", "response.incomplete" -> {
                             done = event.getJSONObject("response")

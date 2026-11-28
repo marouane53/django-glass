@@ -12,8 +12,8 @@ android {
     defaultConfig {
         applicationId = "org.marouane.djangoglasses"
         // Release builds can override both through the environment.
-        versionCode = providers.environmentVariable("VISOR_VERSION_CODE").orNull?.toInt() ?: 28
-        versionName = providers.environmentVariable("VISOR_VERSION_NAME").orNull ?: "0.28-django"
+        versionCode = providers.environmentVariable("VISOR_VERSION_CODE").orNull?.toInt() ?: 31
+        versionName = providers.environmentVariable("VISOR_VERSION_NAME").orNull ?: "0.31-django"
         buildConfigField("boolean", "TAGGED", "false")
     }
 

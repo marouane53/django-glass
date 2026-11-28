@@ -43,6 +43,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
@@ -53,6 +54,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -229,6 +231,10 @@ class Assistant(
             onUtterance = utterance@ { text, startMs, endMs ->
                 val heardText = withoutWakeWord(text)
                 if (heardText.isBlank() || WAKE_WORD_ONLY.matches(heardText)) return@utterance
+                if (WakeText.misheardAlone(heardText)) {
+                    say("Heard \"$heardText\" on its own: taken as the wake phrase, not a question")
+                    return@utterance
+                }
                 val partner = l.partnerSessions[micInteraction]
                 if (partner != null) {
                     partnerUtterance(l, partner, heardText, startMs, endMs)
@@ -1585,6 +1591,12 @@ class Assistant(
         ).joinToString(" ")
         val waiting = CoroutineScope(currentCoroutineContext()).launch { holdOn(l, interaction) }
         val modelStart = android.os.SystemClock.elapsedRealtime()
+        val early = store.config.value.let { c ->
+            val written = l.typedOf.containsKey(interaction) || interaction in l.written
+            if (partner && !written && c.provider == Provider.CHATGPT && c.usesFinnBridge && c.finnPlayback != FinnPlayback.WAV)
+                EarlySpeech(CoroutineScope(currentCoroutineContext()), l, interaction, transcript, c, modelStart) else null
+        }
+        android.util.Log.i("DjangoTiming", "early_speech=${early != null}")
         val reply = try {
             // The glasses give up after their processing timeout; speech and streaming need the last seconds of it.
             val timeoutSeconds = processingTimeoutS() ?: FACTORY_PROCESSING_S
@@ -1594,17 +1606,20 @@ class Assistant(
             say("Model budget ${left / 1000} s; glasses processing timeout $timeoutSeconds s")
             withTimeout(left) {
                 brain.answer(transcript, spoken(l), pastOf(turn), image, note, glasses = glasses,
-                    canEnd = true, capturePhoto = capturePhoto, cameraAction = cameraForTurn)
+                    canEnd = true, capturePhoto = capturePhoto, cameraAction = cameraForTurn, speak = early?.let { it::hear })
             }
         } catch (timeout: TimeoutCancellationException) {
             problem = timeout.why()
             Reply(fallback(spoken(l)))
         } catch (cancel: CancellationException) {
+            early?.cancel()
             throw cancel
         } catch (error: Exception) {
             problem = error.why()
             Reply(fallback(spoken(l)))
         }
+        // An answer that broke off is spoken as far as it had started; the words for a failure only when nothing had.
+        if (problem.isEmpty()) early?.end() else early?.fail()
         android.util.Log.i("DjangoTiming", "answer_ms=${android.os.SystemClock.elapsedRealtime() - modelStart} success=${problem.isEmpty()}")
         val text = reply.text
         val diaryText = text.ifEmpty { reply.actions.asAnswer() }
@@ -1614,6 +1629,7 @@ class Assistant(
         if (problem.isNotEmpty()) say("The model did not answer: $problem")
         if (interaction in l.closed || (interaction in l.partnerTurns && (link !== l || !l.partnerCanAnswer(interaction)))) {
             waiting.cancel()
+            early?.cancel()
             say("The glasses closed this turn before the answer was ready (${modelMs / 1000} s); not sending it")
             // A turn whose every action worked and that has nothing to say lost nothing to the close.
             val done = text.isEmpty() && problem.isEmpty() && reply.actions.isNotEmpty() && reply.actions.all { it.ok }
@@ -1631,7 +1647,7 @@ class Assistant(
                 speakOnGlasses(l, interaction, transcript, "")
                 0L
             } else {
-                deliver(l, interaction, transcript, text, listen = !reply.ends)
+                early?.await() ?: deliver(l, interaction, transcript, text, listen = !reply.ends)
             }
             l.answered.add(interaction)
             l.sessionOf[interaction]?.let { l.answered.add(it) }
@@ -1646,6 +1662,7 @@ class Assistant(
             update(turn) { it.copy(problem = error.why()) }
         } finally {
             waiting.cancel()
+            early?.cancel()
             setPhase(l, AssistantPhase.LISTENING)
         }
     }
@@ -1859,7 +1876,7 @@ class Assistant(
         val card = if (written && display() && text.isNotEmpty()) answerCard(text) else null
         val complete = written || (!l.sessionTurn && !live && !partner)
         if (partner && !live && !written && c.usesFinnBridge && c.finnPlayback != FinnPlayback.WAV && text.isNotBlank()) {
-            val sent = playFinn(c, text) { packets ->
+            val sent = playFinn(c, finnPcm(c, text)) { packets ->
                 stream(l, interaction, transcript, text, packets, complete, listen, card)
             }
             if (sent != null) return sent
@@ -1867,13 +1884,89 @@ class Assistant(
         return stream(l, interaction, transcript, text, synthesise(text, spoken(l)).asFlow(), complete, listen, card)
     }
 
+    /**
+     * Speaks an answer while the model still writes it: one audio stream to the glasses, fed by one Finn request per
+     * piece of text. Nothing is sent before the first sentence is whole and its audio has started, so until then the
+     * usual path can still take the answer.
+     */
+    private inner class EarlySpeech(
+        scope: CoroutineScope, private val l: Link, private val interaction: String, private val transcript: String,
+        private val c: AssistantConfig, private val since: Long,
+    ) {
+        private val phrases = Phrases()
+        private val job = scope.async {
+            try {
+                val first = phrases.await() ?: return@async Result.success<Long?>(null)
+                android.util.Log.i("DjangoTiming", "early_first_piece_ms=${android.os.SystemClock.elapsedRealtime() - since} chars=${first.length}")
+                Result.success(playFinn(c, finnPieces(c, first, phrases)) { packets ->
+                    android.util.Log.i("DjangoTiming", "early_speaking_ms=${android.os.SystemClock.elapsedRealtime() - since}")
+                    stream(l, interaction, transcript, brain.speakable(phrases.spoken()), packets, complete = false, listen = true) {
+                        brain.speakable(phrases.spoken())
+                    }
+                })
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+        }
+
+        fun hear(delta: String) = phrases.add(delta)
+        fun end() = phrases.end()
+        fun fail() = phrases.fail()
+        fun cancel() = job.cancel()
+
+        /** The milliseconds of audio sent; null when nothing was, and the answer still needs speaking. */
+        suspend fun await(): Long? = job.await().getOrThrow()
+    }
+
+    /**
+     * Finn's audio for [first] and then every later piece, as one stream. It is fetched ahead of playback, so the next
+     * piece's request starts while this one still plays. The bridge speaks one piece at a time.
+     */
+    private fun finnPieces(c: AssistantConfig, first: String, phrases: Phrases): Flow<ByteArray> = flow {
+        var piece: String? = first
+        var count = 0
+        while (piece != null) {
+            val text = brain.speakable(piece)
+            if (text.isNotEmpty()) {
+                val start = android.os.SystemClock.elapsedRealtime()
+                var firstMs = -1L
+                var bytes = 0L
+                var tries = 0
+                while (true) {
+                    // A piece that ends in half a sample would turn every piece after it into noise.
+                    var held = ByteArray(0)
+                    try {
+                        finnPcm(c, text).collect { chunk ->
+                            if (firstMs < 0) firstMs = android.os.SystemClock.elapsedRealtime() - start
+                            val all = held + chunk
+                            val even = all.size and 1.inv()
+                            held = all.copyOfRange(even, all.size)
+                            bytes += even
+                            if (even > 0) emit(all.copyOf(even))
+                        }
+                        break
+                    } catch (error: SpeechError) {
+                        // The bridge may still be closing the piece before.
+                        if (bytes > 0 || ++tries > 3 || "429" !in error.message.orEmpty()) throw error
+                        delay(150)
+                    }
+                }
+                android.util.Log.i("DjangoTiming", "finn_piece=${count++} chars=${text.length} first_ms=$firstMs " +
+                    "fetched_ms=${android.os.SystemClock.elapsedRealtime() - start} audio_ms=${bytes / 48}")
+            }
+            piece = phrases.await()
+        }
+    }.buffer(Channel.UNLIMITED)
+
     /** A short prebuffer protects startup. Until the stream opens, a failure can still use the WAV path. */
-    private suspend fun playFinn(c: AssistantConfig, text: String, play: suspend (Flow<OpusPacket>) -> Long): Long? = supervisorScope {
+    private suspend fun playFinn(c: AssistantConfig, pcm: Flow<ByteArray>, play: suspend (Flow<OpusPacket>) -> Long): Long? = supervisorScope {
         val started = android.os.SystemClock.elapsedRealtime()
         val queue = Channel<OpusPacket>(24)
         val producer = launch {
             try {
-                voice.encodeFinn(finnPcm(c, text)).collect { queue.send(it) }
+                voice.encodeFinn(pcm, c.voiceBoost).collect { queue.send(it) }
                 queue.close()
             } catch (error: Exception) {
                 queue.close(error)
@@ -1930,7 +2023,7 @@ class Assistant(
                     ?: throw SpeechError("no answer in ${CLOUD_SPEECH_WAIT_MS / 1000} s")
                 val ready = android.os.SystemClock.elapsedRealtime()
                 say("Speech: ${text.length} characters from ${c.ttsModel}")
-                val packets = voice.encode(audio)
+                val packets = voice.encode(audio, c.voiceBoost)
                 android.util.Log.i("DjangoTiming", "cloud_speech_ms=${ready - start} opus_ms=${android.os.SystemClock.elapsedRealtime() - ready}")
                 return packets
             } catch (cancel: CancellationException) {
@@ -1939,7 +2032,7 @@ class Assistant(
                 say("Speech: the service failed (${error.message}); the phone speaks instead")
             }
         }
-        return voice.speak(text, locale)
+        return voice.speak(text, locale, c.voiceBoost)
     }
 
     /** ev71, ev52 and ev342, with explicit NetEvent types for partner turns and tagged type 0 otherwise. */
@@ -1988,19 +2081,22 @@ class Assistant(
         say(if (text.isEmpty()) "Ended the turn without a word: every tool did what was asked" else "Answered in the glasses' voice${voiceId?.let { " ($it)" }.orEmpty()}: \"$text\"")
     }
 
-    /** Stream phone speech; partner turns with simplified forwarding send the VARM before audio. */
+    /**
+     * Stream phone speech; partner turns with simplified forwarding send the VARM before audio. [whole] is the answer
+     * as far as it is written when asked, for an answer that starts playing before it ends.
+     */
     private suspend fun stream(
         l: Link, interaction: String, transcript: String, text: String, packets: Flow<OpusPacket>, complete: Boolean, listen: Boolean,
-        card: String? = null,
+        card: String? = null, whole: () -> String = { text },
     ): Long {
         val mux = l.mux
         val m0 = checkNotNull(l.m0)
         val s0 = checkNotNull(l.s0)
         check(interaction !in l.partnerTurns || (link === l && l.partnerCanAnswer(interaction))) { "The glasses closed this 3p turn before playback" }
         if (interaction !in l.partnerTurns) preamble(l, interaction, transcript, text)
-        val answer = netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text, card = card != null))
+        fun answer() = netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, whole(), card = card != null))
         val answerBeforeAudio = l.simplified && interaction in l.partnerTurns
-        if (answerBeforeAudio) sendNetEvent(l, m0, answer)
+        if (answerBeforeAudio) sendNetEvent(l, m0, answer())
         val mono = System.nanoTime() / 1_000_000
         val e388 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).str(3, interaction).done()
         mux.send(m0, netEvent(EV_TTS_START_INFO, e388), messageType = MT_NET_EVENT)
@@ -2027,7 +2123,7 @@ class Assistant(
             if (dueUs == 0L || (now - start) / 1000 - dueUs > 80_000) start = now - dueUs * 1000
             if (dueUs == 0L) {
                 mux.send(s0, frame, messageType = MT_STREAM_AUDIO)
-                if (l.simplified && !answerBeforeAudio) sendNetEvent(l, m0, answer)
+                if (l.simplified && !answerBeforeAudio) sendNetEvent(l, m0, answer())
             } else {
                 // A bare header: tagged with type 0, only the first 40 ms would ever play.
                 mux.send(s0, frame)
@@ -2043,16 +2139,16 @@ class Assistant(
         }
         if (chunk.isNotEmpty()) sendChunk()
         mux.send(s0, ByteArray(0), messageType = MT_STREAM_END)
-        if (!l.simplified) sendNetEvent(l, m0, answer)
+        if (!l.simplified) sendNetEvent(l, m0, answer())
         // Without it the glasses stay in their answering state with the mic on, and never offer a follow-up.
-        if (complete) sendNetEvent(l, m0, voiceComplete(interaction, text, listen, card, streamed = true))
+        if (complete) sendNetEvent(l, m0, voiceComplete(interaction, whole(), listen, card, streamed = true))
 
         val e389 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).i64(3, 7000).str(4, interaction).done()
         for (event in listOf(netEvent(EV_TTS_END_INFO, e389), answerAlive(mono))) {
             mux.send(m0, event, messageType = MT_NET_EVENT)
             delay(20)
         }
-        say("Answered: \"$text\"")
+        say("Answered: \"${whole()}\"")
         return dueUs / 1000
     }
 

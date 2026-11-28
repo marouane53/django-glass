@@ -47,25 +47,26 @@ class Voice(private val context: Context) {
         selectLanguage(ready(), locale)
     }
 
-    suspend fun speak(text: String, locale: Locale): List<OpusPacket> = lock.withLock {
+    suspend fun speak(text: String, locale: Locale, boost: VoiceBoost): List<OpusPacket> = lock.withLock {
         val wav = File(context.cacheDir, "assistant-tts.wav")
         synthesize(text, locale, wav)
         withContext(Dispatchers.Default) {
             val pcm = parseWav(wav.readBytes())
-            encodeOpus(resample(pcm.samples, pcm.rate, 48_000))
+            encodeOpus(resample(pcm.samples, pcm.rate, 48_000), boost)
         }
     }
 
     /** Audio synthesised elsewhere, such as by a cloud voice, as the same packets. */
-    suspend fun encode(pcm: SpeechPcm): List<OpusPacket> =
-        withContext(Dispatchers.Default) { encodeOpus(resample(pcm.samples, pcm.rate, 48_000)) }
+    suspend fun encode(pcm: SpeechPcm, boost: VoiceBoost): List<OpusPacket> =
+        withContext(Dispatchers.Default) { encodeOpus(resample(pcm.samples, pcm.rate, 48_000), boost) }
 
     /** Keep one encoder open across all of Finn's network chunks so only the last chunk ends the audio. */
-    internal fun encodeFinn(pcm: Flow<ByteArray>): Flow<OpusPacket> = flow {
+    internal fun encodeFinn(pcm: Flow<ByteArray>, boost: VoiceBoost): Flow<OpusPacket> = flow {
         val resample = FinnResampler()
+        val loud = if (boost == VoiceBoost.OFF) null else Loudness(boost)
         OpusEncoder().use { codec ->
-            pcm.collect { codec.pump(resample.push(it), end = false) { emit(it) } }
-            codec.pump(resample.finish(), end = true) { emit(it) }
+            pcm.collect { chunk -> codec.pump(resample.push(chunk).let { loud?.push(it) ?: it }, end = false) { emit(it) } }
+            codec.pump(resample.finish().let { if (loud != null) loud.push(it) + loud.finish() else it }, end = true) { emit(it) }
         }
     }.flowOn(Dispatchers.Default).buffer(16)
 
@@ -144,11 +145,12 @@ class Voice(private val context: Context) {
         return out
     }
 
-    private suspend fun encodeOpus(pcm: ShortArray): List<OpusPacket> {
+    private suspend fun encodeOpus(pcm: ShortArray, boost: VoiceBoost): List<OpusPacket> {
         val raw = ByteBuffer.allocate(pcm.size * 2).order(ByteOrder.LITTLE_ENDIAN)
         pcm.forEach { raw.putShort(it) }
+        val bytes = if (boost == VoiceBoost.OFF) raw.array() else Loudness(boost).run { push(raw.array()) + finish() }
         val packets = ArrayList<OpusPacket>()
-        OpusEncoder().use { it.pump(raw.array(), end = true) { packet -> packets.add(packet) } }
+        OpusEncoder().use { it.pump(bytes, end = true) { packet -> packets.add(packet) } }
         return packets
     }
 }

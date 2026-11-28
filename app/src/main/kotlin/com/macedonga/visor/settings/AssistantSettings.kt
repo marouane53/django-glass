@@ -55,6 +55,7 @@ import com.macedonga.visor.core.assistant.AssistantPhase
 import com.macedonga.visor.core.assistant.CHATGPT_USAGE
 import com.macedonga.visor.core.assistant.ChatGptPlan
 import com.macedonga.visor.core.assistant.FinnPlayback
+import com.macedonga.visor.core.assistant.VoiceBoost
 import com.macedonga.visor.core.assistant.ModelInfo
 import com.macedonga.visor.core.assistant.ModelRefused
 import com.macedonga.visor.core.assistant.ModelsError
@@ -358,6 +359,11 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                         PillsRow("Finn playback", FinnPlayback.entries.map { it to it.label }, config.finnPlayback,
                             onPick = { mode -> model.store.update { it.copy(finnPlayback = mode) } },
                             sub = "Streaming starts speaking while Finn generates the rest. Flash-Lite uses the same voice on a faster speech model.")
+                    } else null,
+                    if (config.tts != TtsPath.GLASSES || config.speechLanguage.isNotEmpty()) row {
+                        PillsRow("Voice boost", VoiceBoost.entries.map { it to it.label }, config.voiceBoost,
+                            onPick = { boost -> model.store.update { it.copy(voiceBoost = boost) } },
+                            sub = "Makes answers louder than the glasses' full volume allows. Max is the loudest and sounds more compressed.")
                     } else null,
                     if (config.tts == TtsPath.CLOUD) row {
                         // A sample sentence on the phone's speaker: no model and no glasses.
