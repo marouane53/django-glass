@@ -28,7 +28,30 @@ public class PcmUtterancesTest {
         require(bounded.isEmpty(), "a question longer than 20 seconds must remain whole");
         feed(continuous, bounded, 40000, true);
         require(bounded.size() == 1 && bounded.get(0).length == 1920000, "continuous speech remains bounded at 60 seconds");
-        System.out.println("5 speech-boundary regression checks passed");
+        PcmUtterances quick = new PcmUtterances(700); List<byte[]> whole = new ArrayList<>();
+        feed(quick, whole, 1000, true); feed(quick, whole, 600, false);
+        require(quick.early() == null, "a pause shorter than the early mark gives nothing early");
+        feed(quick, whole, 100, false);
+        byte[] first = quick.early();
+        require(first != null && quick.early() == null && whole.isEmpty(), "the early copy comes once, and the utterance stays open");
+        feed(quick, whole, 1000, true);
+        feed(quick, whole, 700, false);
+        byte[] second = quick.early();
+        require(second != null && second.length > first.length, "after more speech a new early copy holds the whole question");
+        feed(quick, whole, 900, false);
+        require(whole.size() == 1 && quick.matchedEarly(), "a pause that proves final matches its early copy");
+
+        PcmUtterances resumed = new PcmUtterances(700); List<byte[]> later = new ArrayList<>();
+        feed(resumed, later, 1000, true); feed(resumed, later, 700, false);
+        require(resumed.early() != null, "early copy before the speaker goes on");
+        feed(resumed, later, 400, true);
+        require(resumed.finish() != null && !resumed.matchedEarly(), "speech after the early copy makes it stale");
+        PcmUtterances click = new PcmUtterances(700); List<byte[]> none = new ArrayList<>();
+        feed(click, none, 100, true);
+        require(click.active() && !click.talking(), "a click is not someone talking again");
+        feed(click, none, 200, true);
+        require(click.talking(), "a fifth of a second of voice is");
+        System.out.println("8 speech-boundary regression checks passed");
     }
     private static void feed(PcmUtterances s, List<byte[]> out, int milliseconds, boolean speech) {
         byte[] frame = new byte[640];

@@ -10,6 +10,12 @@ import java.util.concurrent.*;
 
 /** Receives PCM supplied by a client, never opens the phone's microphone. */
 public class MaiRecognitionService extends RecognitionService {
+    /** From the client: this long into a pause, transcribe what was said so far, so the text is ready when the pause proves final. */
+    static final String EXTRA_EARLY_SILENCE_MILLIS = "org.marouane.glassesspeech.extra.EARLY_SILENCE_MILLIS";
+    /** In each result: whether another piece of the same question comes right behind it. */
+    static final String EXTRA_MORE_FOLLOWS = "org.marouane.glassesspeech.extra.MORE_FOLLOWS";
+    /** In each result: how long ago its last spoken frame was read, for timing the wait after a question. */
+    static final String EXTRA_SINCE_SPEECH_MILLIS = "org.marouane.glassesspeech.extra.SINCE_SPEECH_MILLIS";
     private volatile Session active;
     private SpeechRecognizer fallback;
     public void onCheckRecognitionSupport(Intent intent, SupportCallback callback) {
@@ -26,7 +32,8 @@ public class MaiRecognitionService extends RecognitionService {
             || intent.getIntExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_ENCODING, 2) != 2) { fail(callback, SpeechRecognizer.ERROR_AUDIO); return; }
         String credential = "gemini".equals(Cloud.transcriptionProvider(this)) ? "gemini" : "mai";
         if (Vault.get(this, credential).isEmpty()) { fail(callback, SpeechRecognizer.ERROR_SERVER); return; }
-        Session session = new Session(source, callback, intent.hasExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION), attributed); active = session;
+        Session session = new Session(source, callback, intent.hasExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION), attributed,
+            intent.getIntExtra(EXTRA_EARLY_SILENCE_MILLIS, 0)); active = session;
         Cloud.status(this, "recognition", true);
         new Thread(session::readAudio, "mai-audio-pipe").start();
     }
@@ -59,12 +66,25 @@ public class MaiRecognitionService extends RecognitionService {
         final ParcelFileDescriptor fd; final Callback cb; final boolean segmented;
         final android.content.Context attributed;
         final ExecutorService work = Executors.newSingleThreadExecutor();
-        volatile boolean cancelled, failed; InputStream input;
-        Session(ParcelFileDescriptor source, Callback callback, boolean segments, android.content.Context context) { fd = source; cb = callback; segmented = segments; attributed = context; }
+        final ExecutorService ahead = Executors.newCachedThreadPool();
+        final ScheduledExecutorService later = Executors.newSingleThreadScheduledExecutor();
+        // How long after the last word a question that stopped mid-sentence is still waited for.
+        static final long UNFINISHED_WAIT_MS = 4000;
+        final int earlySilenceMs;
+        volatile boolean cancelled, failed, talking, stirring; InputStream input;
+        // Counts the pieces heard, so a wait set for one piece is void once another has come. Work thread only.
+        int pieces;
+        // Pieces of a question kept back while the speaker goes on after a long pause. Only the work thread touches it.
+        final List<String> held = new ArrayList<>();
+        Session(ParcelFileDescriptor source, Callback callback, boolean segments, android.content.Context context, int earlyMs) {
+            fd = source; cb = callback; segmented = segments; attributed = context; earlySilenceMs = earlyMs;
+        }
         void finishInput() { try { fd.close(); } catch (IOException ignored) {} }
         void cancel() { cancelled = true; finishInput(); }
         void readAudio() {
-            PcmUtterances utterances = new PcmUtterances();
+            PcmUtterances utterances = new PcmUtterances(earlySilenceMs);
+            Future<Cloud.Heard> early = null;
+            long spokeAt = android.os.SystemClock.elapsedRealtime();
             try (InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(fd)) {
                 input = in; cb.readyForSpeech(new Bundle());
                 byte[] frame = new byte[640]; int n;
@@ -72,43 +92,80 @@ public class MaiRecognitionService extends RecognitionService {
                     // Fixed complete frames preserve sample alignment even if pipe reads arrive in odd sizes.
                     boolean wasActive = utterances.active();
                     byte[] completed = utterances.accept(frame, n);
+                    talking = utterances.talking(); stirring = utterances.active();
+                    if (utterances.lastWasSpeech()) spokeAt = android.os.SystemClock.elapsedRealtime();
                     if (!wasActive && utterances.active()) cb.beginningOfSpeech();
-                    if (completed != null) submit(completed);
+                    byte[] soFar = utterances.early();
+                    if (soFar != null) early = ahead.submit(() -> Cloud.hear(attributed, soFar));
+                    if (completed != null) submit(completed, utterances.matchedEarly() ? early : null, spokeAt);
                 }
             } catch (Exception e) { /* A client closing the pipe ends its current utterance. */ }
+            talking = false; stirring = false;
             byte[] tail = utterances.finish();
-            if (!cancelled && tail != null) submit(tail);
+            if (!cancelled && tail != null) submit(tail, utterances.matchedEarly() ? early : null, spokeAt);
+            ahead.shutdown();
             if (!work.isShutdown()) {
-                work.execute(() -> { if (!cancelled && !failed) try { if (segmented) cb.endOfSegmentedSession(); else if (!sentResult) fail(cb, SpeechRecognizer.ERROR_NO_MATCH); } catch (Exception ignored) {} synchronized (MaiRecognitionService.this) { if (active == this) active = null; } });
+                work.execute(() -> { later.shutdownNow(); if (!cancelled && !failed) try { deliver(android.os.SystemClock.elapsedRealtime()); if (segmented) cb.endOfSegmentedSession(); else if (!sentResult) fail(cb, SpeechRecognizer.ERROR_NO_MATCH); } catch (Exception ignored) {} synchronized (MaiRecognitionService.this) { if (active == this) active = null; } });
                 work.shutdown();
             }
         }
         volatile boolean sentResult;
-        void submit(byte[] pcm) {
+        /** [ready]: the same words already being transcribed, from before the pause proved final. */
+        void submit(byte[] pcm, Future<Cloud.Heard> ready, long spokeAt) {
             work.execute(() -> {
                 if (cancelled || failed) return;
-                String text;
+                String text = null; boolean finished = true;
+                if (ready != null) try { Cloud.Heard heard = ready.get(); text = heard.text; finished = heard.finished; } catch (Exception ignored) { /* Transcribed again below. */ }
                 try {
-                    text = Cloud.transcribe(attributed, pcm);
+                    if (text == null && earlySilenceMs > 0) { Cloud.Heard heard = Cloud.hear(attributed, pcm); text = heard.text; finished = heard.finished; }
+                    if (text == null) text = Cloud.transcribe(attributed, pcm);
                     Cloud.status(MaiRecognitionService.this, "stt", true);
                 } catch (Exception e) {
-                    if (!cancelled) {
-                        Cloud.status(MaiRecognitionService.this, "stt", false);
-                        Cloud.recognitionFailure(MaiRecognitionService.this, "provider", e);
-                        // One failed segment must not kill every later question in the conversation.
-                        if (!segmented) { failed = true; fail(cb, SpeechRecognizer.ERROR_NETWORK); }
-                    }
+                    if (cancelled) return;
+                    Cloud.status(MaiRecognitionService.this, "stt", false);
+                    Cloud.recognitionFailure(MaiRecognitionService.this, "provider", e);
+                    // One failed segment must not kill every later question in the conversation.
+                    if (!segmented) { failed = true; fail(cb, SpeechRecognizer.ERROR_NETWORK); return; }
+                    // Nor strand the pieces held before it.
+                    text = "";
+                }
+                if (cancelled) return;
+                int mine = ++pieces;
+                if (!text.isEmpty()) held.add(text);
+                // The speaker went on after a pause long enough to end an utterance: the question is not over. Its
+                // pieces wait for the one being spoken, which always comes through here when it ends.
+                if (segmented && earlySilenceMs > 0 && talking) return;
+                // Stopped mid-sentence, looking for a word: the rest is waited for a little longer.
+                if (segmented && earlySilenceMs > 0 && !finished && !held.isEmpty()) {
+                    settleLater(mine, spokeAt, spokeAt + UNFINISHED_WAIT_MS - android.os.SystemClock.elapsedRealtime());
                     return;
                 }
-                if (cancelled || text.isEmpty()) return;
-                try {
-                    Bundle result = new Bundle(); result.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, new ArrayList<>(List.of(text)));
-                    if (segmented) cb.segmentResults(result); else cb.results(result); sentResult = true;
-                } catch (Exception e) {
-                    Cloud.recognitionFailure(MaiRecognitionService.this, "callback", e);
-                    cancel();
-                }
+                deliver(spokeAt);
             });
+        }
+        void settleLater(int piece, long spokeAt, long delayMs) {
+            try {
+                later.schedule(() -> work.execute(() -> {
+                    // Another piece came, or is being spoken and will come: it settles the question.
+                    if (cancelled || piece != pieces || held.isEmpty() || talking) return;
+                    // A sound has just begun: it may be the next word.
+                    if (stirring) settleLater(piece, spokeAt, 300); else deliver(spokeAt);
+                }), Math.max(0, delayMs), TimeUnit.MILLISECONDS);
+            } catch (RejectedExecutionException ended) { /* The session is over; its last task sends what is held. */ }
+        }
+        void deliver(long spokeAt) {
+            try {
+                for (int i = 0; i < held.size(); i++) {
+                    Bundle result = new Bundle(); result.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, new ArrayList<>(List.of(held.get(i))));
+                    result.putBoolean(EXTRA_MORE_FOLLOWS, i + 1 < held.size());
+                    result.putLong(EXTRA_SINCE_SPEECH_MILLIS, android.os.SystemClock.elapsedRealtime() - spokeAt);
+                    if (segmented) cb.segmentResults(result); else cb.results(result); sentResult = true;
+                }
+            } catch (Exception e) {
+                Cloud.recognitionFailure(MaiRecognitionService.this, "callback", e);
+                cancel();
+            }
+            held.clear();
         }
     }
 }

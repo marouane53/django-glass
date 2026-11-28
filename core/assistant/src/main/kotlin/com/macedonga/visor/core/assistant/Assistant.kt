@@ -301,6 +301,7 @@ class Assistant(
                     l.heard.getOrPut(micInteraction) { CompletableDeferred() }.complete(asked())
                 }
             },
+            earlySilenceMs = if (store.config.value.quickTurns) EARLY_SILENCE_MS else 0,
         ).also { it.start() }
     }
 
@@ -331,6 +332,8 @@ class Assistant(
         var lastSpeechEnd = -1L
         // The segments of a turn that is waiting for its last ones before it is answered.
         var joining: MutableList<String>? = null
+        // Told of each segment that joins: whether yet another follows it.
+        var rest: Channel<Boolean>? = null
     }
 
     private suspend fun awaitPartnerWake(l: Link, interaction: String): Boolean {
@@ -350,11 +353,13 @@ class Assistant(
         val words = withoutWakeWord(text)
         if (words.isEmpty()) return
         session.activityAt = System.currentTimeMillis()
+        val more = ears?.moreFollows == true
         // A turn still waiting for its last segments takes this one too.
         synchronized(session) {
             session.joining?.let { held ->
                 held += words
                 session.lastSpeechEnd = endMs
+                session.rest?.trySend(more)
                 return
             }
         }
@@ -363,12 +368,29 @@ class Assistant(
         l.partnerTurns.add(interaction)
         if (interaction == session.initialInteraction) l.fresh.add(interaction)
         val held = mutableListOf(words)
-        synchronized(session) { session.joining = held }
+        val rest = Channel<Boolean>(Channel.UNLIMITED)
+        synchronized(session) {
+            session.joining = held
+            session.rest = rest
+        }
+        val quick = store.config.value.quickTurns
         scope.launch {
             try {
-                // The question's other segments come within this grace; they are joined into it.
-                delay(PARTNER_JOIN_MS)
-                val question = synchronized(session) { session.joining = null; held.joinToString(" ") }
+                if (quick) {
+                    // A question ends on a pause long enough to be final. When the wearer went on after one, the
+                    // companion kept the pieces and sends them together: the rest are right behind this one.
+                    var waiting = more
+                    while (waiting) waiting = withTimeoutOrNull(PARTNER_JOIN_MS) { rest.receive() } ?: false
+                } else {
+                    // The question's other segments come within this grace; they are joined into it.
+                    delay(PARTNER_JOIN_MS)
+                }
+                val question = synchronized(session) {
+                    session.joining = null
+                    session.rest = null
+                    held.joinToString(" ")
+                }
+                android.util.Log.i("DjangoTiming", "turn_pieces=${held.size} quick=$quick")
                 if (!awaitPartnerWake(l, interaction)) return@launch
                 if (interaction != session.initialInteraction) {
                     if (session.microphoneEnded) return@launch
@@ -2369,6 +2391,7 @@ class Assistant(
         const val QUESTION_GRACE_MS = 3_000L
         // How long a 3p turn waits for the rest of its question before it is answered.
         const val PARTNER_JOIN_MS = 1_500L
+        const val EARLY_SILENCE_MS = 700
         const val PARTNER_IDLE_MS = 90_000L
         // ev57 field 11, invocationMethod: 1 for the wake word, 3 for the reply to an answer that asked something, 5 for
         // a question after any other answer.

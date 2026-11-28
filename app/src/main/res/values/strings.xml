@@ -680,6 +680,8 @@
     <string name="ai_voice_photos">Voice photos</string>
     <string name="ai_web">Search the web</string>
     <string name="ai_quiet_actions">Silent when actions succeed</string>
+    <string name="ai_quick_turns">Quick replies</string>
+    <string name="ai_quick_turns_sub">Starts on your question as soon as you stop talking. Turn off if questions get cut short.</string>
     <string name="ai_memory_window">A conversation stays open</string>
     <string name="ai_minutes">%1$d min</string>
     <string name="ai_answer_wait">The glasses wait for an answer</string>

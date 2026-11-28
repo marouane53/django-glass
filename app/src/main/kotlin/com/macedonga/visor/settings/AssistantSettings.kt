@@ -396,6 +396,7 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                         val refused = config.webSearch && "${config.provider.name} ${config.answerModel}" in noSearch
                         VisorToggleRow(model.toggles.byId("web")!!, problem = if (refused) stringResource(R.string.ai_web_unavailable) else null)
                     } else null,
+                    { VisorToggleRow(model.toggles.byId("quick_turns")!!) },
                     { VisorToggleRow(model.toggles.byId("quiet_actions")!!) },
                     {
                         PillsRow(

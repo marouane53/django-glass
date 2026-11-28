@@ -32,6 +32,8 @@ data class AssistantConfig(
     val finnPlayback: FinnPlayback = FinnPlayback.WAV,
     // Speech the phone streams to the glasses, made louder than the voice's own level.
     val voiceBoost: VoiceBoost = VoiceBoost.BOOST,
+    // Transcribe a question while its closing pause is still running, and answer it without a second wait.
+    val quickTurns: Boolean = true,
     // No spoken answer when every tool the model used did what was asked, such as music that now plays.
     val quietAfterActions: Boolean = false,
     // The language the wearer speaks, as a BCP 47 tag, when the glasses have no pack for it; empty, the glasses' own.
@@ -180,6 +182,7 @@ class AssistantConfigStore(context: Context) {
             .putString("tts_voice", next.ttsVoice)
             .putString("finn_playback", next.finnPlayback.name)
             .putString("voice_boost", next.voiceBoost.name)
+            .putBoolean("quick_turns", next.quickTurns)
             .putBoolean("quiet_after_actions", next.quietAfterActions)
             .putString("speech_language", next.speechLanguage)
             .putString("instructions", next.instructions)
@@ -216,6 +219,7 @@ class AssistantConfigStore(context: Context) {
             ttsVoice = prefs.getString("tts_voice", d.ttsVoice).orEmpty(),
             finnPlayback = FinnPlayback.entries.firstOrNull { it.name == prefs.getString("finn_playback", null) } ?: d.finnPlayback,
             voiceBoost = VoiceBoost.entries.firstOrNull { it.name == prefs.getString("voice_boost", null) } ?: d.voiceBoost,
+            quickTurns = prefs.getBoolean("quick_turns", d.quickTurns),
             quietAfterActions = prefs.getBoolean("quiet_after_actions", d.quietAfterActions),
             speechLanguage = prefs.getString("speech_language", d.speechLanguage).orEmpty(),
             instructions = prefs.getString("instructions", d.instructions).orEmpty().replace(LEGACY_DJANGO_MODEL_INSTRUCTION, ""),

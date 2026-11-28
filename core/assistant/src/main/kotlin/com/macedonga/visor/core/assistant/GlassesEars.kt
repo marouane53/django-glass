@@ -39,7 +39,17 @@ class GlassesEars(
     private val onPartial: ((String) -> Unit)? = null,
     /** The recogniser's confidence in the utterance [onUtterance] gets next, from 0 to 1, when it says. */
     private val onConfidence: (Float) -> Unit = {},
+    /** Asks the companion to transcribe this long into a pause, so the words are ready when the pause proves final; 0 not at all. */
+    private val earlySilenceMs: Int = 0,
 ) {
+    /**
+     * Whether another piece of the same question comes right behind the utterance [onUtterance] is getting: the
+     * companion kept them back while the wearer went on after a long pause.
+     */
+    @Volatile
+    var moreFollows = false
+        private set
+
     private val main = Handler(Looper.getMainLooper())
 
     // On-device models go by language and region: the glasses say "en", the phone may hold "en-GB" only.
@@ -197,6 +207,7 @@ class GlassesEars(
             // One session for as long as the pipe is open; each utterance comes back as a segment.
             putExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION, RecognizerIntent.EXTRA_AUDIO_SOURCE)
             if (onPartial != null) putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            if (earlySilenceMs > 0) putExtra(EXTRA_EARLY_SILENCE_MILLIS, earlySilenceMs)
         }
         r.startListening(intent)
         val out = FileOutputStream(write.fileDescriptor)
@@ -332,6 +343,10 @@ class GlassesEars(
         if (!text.isNullOrEmpty()) {
             // Recognisers that do not score send no array, or 0 for every result.
             bundle.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)?.firstOrNull()?.takeIf { it > 0f }?.let(onConfidence)
+            moreFollows = bundle.getBoolean(EXTRA_MORE_FOLLOWS, false)
+            if (bundle.containsKey(EXTRA_SINCE_SPEECH_MILLIS)) {
+                android.util.Log.i("DjangoTiming", "heard_after_speech_ms=${bundle.getLong(EXTRA_SINCE_SPEECH_MILLIS)} early=${earlySilenceMs > 0}")
+            }
             onUtterance(text, speechFrom.takeIf { it > 0 } ?: clockMs, clockMs)
         }
         speechFrom = 0
@@ -339,6 +354,10 @@ class GlassesEars(
 
     private companion object {
         const val RATE = 16_000
+        // The speech companion's own extras.
+        const val EXTRA_EARLY_SILENCE_MILLIS = "org.marouane.glassesspeech.extra.EARLY_SILENCE_MILLIS"
+        const val EXTRA_MORE_FOLLOWS = "org.marouane.glassesspeech.extra.MORE_FOLLOWS"
+        const val EXTRA_SINCE_SPEECH_MILLIS = "org.marouane.glassesspeech.extra.SINCE_SPEECH_MILLIS"
         // A grouped record's head after its length: the time and five bytes not decoded yet.
         const val GROUP_HEAD = 9
         const val RESTARTS = 5

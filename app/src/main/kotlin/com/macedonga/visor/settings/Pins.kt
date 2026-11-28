@@ -139,6 +139,10 @@ class VisorToggles @Inject constructor(
             { on -> assistant.update { it.copy(tts = if (on) TtsPath.GLASSES else if (it.tts == TtsPath.GLASSES) TtsPath.PHONE else it.tts) } },
         ),
         VisorToggle(
+            "quick_turns", R.string.ai_quick_turns, R.string.ai_quick_turns_sub, Topic.META_AI,
+            assistant.config.on { it.quickTurns }, { on -> assistant.update { it.copy(quickTurns = on) } },
+        ),
+        VisorToggle(
             "quiet_actions", R.string.ai_quiet_actions, null, Topic.META_AI,
             assistant.config.on { it.quietAfterActions }, { on -> assistant.update { it.copy(quietAfterActions = on) } },
         ),
